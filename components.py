@@ -15,13 +15,20 @@ from __future__ import annotations
 from typing import List
 import sys
 
-#classes
+
+"""COMPONENT CLASSES
+"""
+#Coords: It's the "data type" of a point on the screen.
 class Coords:
+    #the attributes (private) only can be reached by getters and setters.
     __x: int = 0
     __y: int = 0
+    
+    #the constructor of Coords receives a coordinate pair.
     def __init__(self, x:int, y:int) -> None:
         try:     
             i = int(x)
+            #Type validation.
             if float(i) != float(x):
                 raise ValueError("X coordinate is not an integer.")
             
@@ -38,16 +45,20 @@ class Coords:
     def getY(self) -> int:
         return self.__y
     
-    def setX(self, x) -> None:
+    def setX(self, x:int) -> None:
         self.__x = x
-    def setY(self, y) -> None:
+    def setY(self, y:int) -> None:
         self.__y = y    
 
 
+#Entry: Represents a logic entry. It has a value itself. 
+#       Then cannot be connected to other entries (only outputs its own value).
 class Entry:
+    #the attributes (private) only can be reached by getters and setters.
     __value:bool = False
     __coords:Coords
 
+    #the constructor of Entry receives a logic value and the Coords where the entry should be placed.
     def __init__(self, value:bool, coords:Coords) -> None:
         self.setValue(value)
         self.setCoords(coords)
@@ -65,15 +76,21 @@ class Entry:
         try:
             self.__value = value
             if not(isinstance(value,bool)):
-                raise ValueError("Logic value expected. You entered an: ", type(value))
+                raise ValueError("Logic value expected. You entered a(n): ", type(value))
         except ValueError as ve:
             print(ve)    
     def setCoords(self, coords:Coords):
         self.__coords = coords
 
 
+#Gate: Represents the main logic gates (or, and, xor, nor, nand) those must receives a pair of 
+#      logic values and are able to output its interpretation.
 class Gate:
+    #the attributes (private) only can be reached by getters and setters.
     __coords:Coords
+
+    #the constructor of Gate receives the gate type, two logic values and the Coords where it
+    #should be placed.
     def __init__(self, gatetype:int, in1:bool, in2:bool, coords:Coords) -> None:
         try:
             i = int(gatetype)
@@ -131,9 +148,12 @@ class Gate:
         elif self.getGateType()==5:
             return(not(self.getIn1() and self.getIn2()))
 
-
+#Wire: Represents the connector of the logic circuit. It's defined as a list of unique 
+#      Coords. Once connected to an logic component carries its value from start to end points.
 class Wire:
+    #the attributes (private) only can be reached by getters and setters.
     __coords:List[Coords] = []
+
     def __init__(self, points:List[Coords]) -> None:
         try:
             if len(points) < 2:
@@ -172,7 +192,9 @@ class Wire:
                 return self.__coords[self.__coords.index(i) + 1]
 
 
-#functions
+"""FUNCTIONS
+"""
+#Each is[Component](): verifies the respective data type of a component. Returns True if its correct.
 def isEntry(component) -> bool:
     return isinstance(component, Entry)
 def isGate(component) -> bool:
@@ -180,11 +202,15 @@ def isGate(component) -> bool:
 def isWire(component) -> bool:
     return isinstance(component, Wire)
 
+#isEqualPoints(): receives two pairs of Coords and returns True if they have the same x and y.
 def isEqualPoints(c1:Coords, c2:Coords) -> bool:
     if c1.getX()==c2.getX() and c1.getY()==c2.getY():
         return True
     return False
 
+#wiredComponent(): receives an Wire and other component then verifies if the component is connected
+#                  to the Wire begin or end (True if positive). Entry can only be connected to the
+#                  Wire start point.
 def wiredComponent(w:Wire, component) -> bool:
     if isGate(component) and (isEqualPoints(w.getWireStartP(), component.getCoords()) or isEqualPoints(w.getWireEndP(), component.getCoords())):
         return True
@@ -193,18 +219,21 @@ def wiredComponent(w:Wire, component) -> bool:
     else:
         return False
 
+#connectedComponents(): to be connected the components c1 and c2 must be wired one at start and
+#                       other to end of the Wire component.
 def connectedComponents(w:Wire, c1, c2) -> bool:
-    return (wiredComponent(w, c1) and wiredComponent(w, c2) and not(isEqualPoints(c1.getCoords(), c2.getCoords())))
+    return (wiredComponent(w, c1) and wiredComponent(w, c2) and
+    not(isEqualPoints(c1.getCoords(), c2.getCoords())))
 
 
 
 
 """
-#basic test ahead
-e1 = Entry(False, Coords(10,20))
-e2 = Entry(False, Coords(10,30))
-w = Wire((Coords(10,20),Coords(50,20),Coords(10,20),Coords(90,40)))
-g = Gate(1, e1.getValue(), e2.getValue(), Coords(20,40))
+    #basic test ahead
+    e1 = Entry(False, Coords(10,20))
+    e2 = Entry(False, Coords(10,30))
+    w = Wire((Coords(10,20),Coords(50,20),Coords(10,20),Coords(90,40)))
+    g = Gate(1, e1.getValue(), e2.getValue(), Coords(20,40))
 
-print(connectedComponents(w,e1,g))
+    print(connectedComponents(w,e1,g))
 """
