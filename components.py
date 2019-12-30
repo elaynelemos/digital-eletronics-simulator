@@ -13,30 +13,26 @@
 
 from __future__ import annotations
 from typing import List
+from operator import xor
 import sys
 
+RELATIVE_GATEIN_X = 0
+RELATIVE_GATEIN_Y = 0
+RELATIVE_GATEOUT_X = 0
+RELATIVE_GATEOUT_Y = 0
+N_ENTRIES = 2
 
-"""COMPONENT CLASSES
+"""COMPONENT CLASSES > look at Coords, stopped there
 """
 #Coords: It's the "data type" of a point on the screen.
 class Coords:
-    #the attributes (private) only can be reached by getters and setters.
-    __x: int = 0
-    __y: int = 0
+    #the attributes (private) only can be reached by getters and setters. Initiate coords with
+    #invalid number for screen to be treated if there's any error in insertion.
+    __x: int = None
+    __y: int = None
     
     #the constructor of Coords receives a coordinate pair.
     def __init__(self, x:int, y:int) -> None:
-        try:     
-            i = int(x)
-            #Type validation.
-            if float(i) != float(x):
-                raise ValueError("X coordinate is not an integer.")
-            
-            i = int(y)
-            if float(i) != float(y):
-                raise ValueError("Y coordinate is not an integer.")
-        except ValueError as ve:
-            print(ve)
         self.setX(x)
         self.setY(y)
 
@@ -45,22 +41,38 @@ class Coords:
     def getY(self) -> int:
         return self.__y
     
-    def setX(self, x:int) -> None:
-        self.__x = x
-    def setY(self, y:int) -> None:
-        self.__y = y    
+    def setX(self, x:int) -> bool: #returns True if succeeds.
+        try:
+            if not(isinstance(x, int)) or isinstance(x, bool): #Type validation.
+                raise ValueError("ValueError: integer expected to X coordinate. You entered a(n): ", type(x))
+        except ValueError as ve:
+            print(ve)
+            return False
+        else:
+            self.__x = x
+            return True
+
+    def setY(self, y:int) -> bool: #returns True if succeeds.
+        try:
+            if not(isinstance(y, int)) or isinstance(y, bool): #Type validation.
+                raise ValueError("ValueError: integer expected to Y coordinate. You entered a(n): ", type(y))
+        except ValueError as ve:
+            print(ve)
+            return False
+        else:
+            self.__y = y
+            return True
 
 
 #Entry: Represents a logic entry. It has a value itself. 
 #       Then cannot be connected to other entries (only outputs its own value).
 class Entry:
     #the attributes (private) only can be reached by getters and setters.
-    __value:bool = False
-    __coords:Coords
+    __value:bool = None
+    __coords:Coords = None
 
     #the constructor of Entry receives a logic value and the Coords where the entry should be placed.
-    def __init__(self, value:bool, coords:Coords) -> None:
-        self.setValue(value)
+    def __init__(self, coords:Coords) -> None:
         self.setCoords(coords)
 
     def getValue(self) -> bool:
@@ -72,125 +84,194 @@ class Entry:
     def getCoordY(self) -> int:
         return self.__coords.getY()
 
-    def setValue(self, value:bool) -> None:
+    def setValue(self, value:bool) -> bool: #returns True if succeeds.
         try:
-            self.__value = value
             if not(isinstance(value,bool)):
-                raise ValueError("Logic value expected. You entered a(n): ", type(value))
+                raise ValueError("ValueError: Logic value expected to entry. You entered a(n): ", type(value))
         except ValueError as ve:
-            print(ve)    
-    def setCoords(self, coords:Coords):
+            print(ve)
+            return False
+        else:
+            self.__value = value
+            return True
+
+    def toogleV(self) -> bool:
+        try:
+            if self.__value is not None:
+                self.__value = xor(self.__value,True)
+                return True
+            else:
+                raise AttributeError("Entry value not defined!")
+        except AttributeError as ae:
+            print(ae)
+            return False
+
+    def setCoords(self, coords:Coords) -> bool: #returns True if both coords are valid.
         self.__coords = coords
+        if self.__coords.getX()<0 or self.__coords.getY()<0:
+            return False
+        else:
+            return True
 
 
 #Gate: Represents the main logic gates (or, and, xor, nor, nand) those must receives a pair of 
 #      logic values and are able to output its interpretation.
 class Gate:
     #the attributes (private) only can be reached by getters and setters.
-    __coords:Coords
+    __gatetype:int = None
+    __entry:List[Entry] = []
+    __coords:Coords = None
+    __out:Coords = None
 
     #the constructor of Gate receives the gate type, two logic values and the Coords where it
     #should be placed.
-    def __init__(self, gatetype:int, in1:bool, in2:bool, coords:Coords) -> None:
-        try:
-            i = int(gatetype)
-            if float(i) != float(gatetype):
-                raise ValueError("Wrong type for gate classification! Integer expected.")
-            elif i>5 or i<1:
-                raise ValueError("Wrong range for gate classification! Expected between 1 and 5 including both.")  
-
-            if in1!=True and in1!=False:
-                raise ValueError("The first entry is not a boolean.")
-
-            if in2!=True and in2!=False:
-                raise ValueError("The second entry is not a boolean.")
-        except ValueError as ve:
-            print(ve)
-            return
-        
-        #gate types: 1=or, 2=and, 3=xor, 4=nor, 5=nand
-        self.setGateType(gatetype)
-        self.setIn1(in1) #first entry
-        self.setIn2(in2) #second entry
+    def __init__(self, gatetype:int, coords:Coords) -> None: 
+        self.setGateType(gatetype) #gate types: 1=or, 2=and, 3=xor, 4=nor, 5=nand
         self.setCoords(coords) #position of the gate
     
-    def getGateType(self):
+    def getGateType(self) -> int:
         return self.__gatetype    
-    def getIn1(self):
-        return self.__in1    
-    def getIn2(self):
-        return self.__in2
-    def getCoords(self):
+    def getIn(self,i:int) -> Entry:
+        try:
+            if self.__entry[i] is not None:
+                return self.__entry[i]
+            else:
+                raise AttributeError("Entry not defined!")
+        except AttributeError as ae:
+            print(ae)
+            return None 
+
+    def getCoords(self) -> Coords:
             return self.__coords
-    def getCoordX(self):
+    def getCoordX(self) -> int:
         return self.__coords.getX()   
-    def getCoordY(self):
+    def getCoordY(self) -> int:
         return self.__coords.getY()
 
-    def setGateType(self, gatetype):
-        self.__gatetype = int(gatetype)
-    def setIn1(self, in1):
-        self.__in1 = bool(in1)
-    def setIn2(self, in2):
-        self.__in2 = bool(in2)
-    def setCoords(self, coords:Coords):
-        self.__coords = coords
+    def getOutCoords(self) -> Coords:
+        return self.__out
+    def getOutCoordX(self) -> int:
+        return self.__out.getX()
+    def getOutCoordY(self) -> int:
+        return self.__out.getY()
 
-    def gateOutput(self) -> bool:
+    def setGateType(self, gatetype) -> bool: #returns True if succeeds.
+        try:
+            if not(isinstance(gatetype, int)) or isinstance(gatetype, bool): #Type validation.
+                raise ValueError("ValueError: integer expected to gate classification. You entered a(n): ", type(gatetype))
+            elif gatetype<1 or gatetype>5: #validation of gate classification.
+                raise ValueError("ValueError: gate classification not defined! Expected between 1 and 5 including both. You entered", gatetype)
+        except ValueError as ve:
+            print(ve)
+            return False
+        else:
+            self.__gatetype = gatetype
+            return True
+        
+    def setIn(self, entry) -> bool: #returns True if succeeds.
+        try:
+            for i in entry:
+                if i.getValue() is not None:
+                    self.__entry.append(i)
+                else:
+                    raise ValueError("ValueError: Logic value expected to the gate entries. You entered a(n): ", type(i))
+        except ValueError as ve:
+            print(ve)
+            self.__entry = []
+            return False
+        else:
+            return True
+        
+    def setCoords(self, coords:Coords) -> bool: #returns True if both coords are valid.
+        self.__coords = coords
+        if self.__coords.getX()<0 or self.__coords.getY()<0:
+            return False
+        else:
+            return True
+
+    def gateOut(self) -> Entry:
+        A = Entry(Coords(self.getCoordX()+self.getOutCoordX(), self.getCoordY()+self.getOutCoordY()))
         if self.getGateType()==1:
-            return(self.getIn1() or self.getIn2())
+            A.setValue(self.getIn(0).getValue() or self.getIn(1).getValue())
         elif self.getGateType()==2:
-            return(self.getIn1() and self.getIn2())
+            A.setValue(self.getIn(0).getValue() and self.getIn(1).getValue())
         elif self.getGateType()==3:
-            return(self.getIn1() != self.getIn2())
+            A.setValue(self.getIn(0).getValue() != self.getIn(1).getValue())
         elif self.getGateType()==4:
-            return(not(self.getIn1() or self.getIn2()))
+            A.setValue(not(self.getIn(0).getValue() or self.getIn(1).getValue()))
         elif self.getGateType()==5:
-            return(not(self.getIn1() and self.getIn2()))
+            A.setValue(not(self.getIn(0).getValue() and self.getIn(1).getValue()))
+        return A
+
 
 #Wire: Represents the connector of the logic circuit. It's defined as a list of unique 
 #      Coords. Once connected to an logic component carries its value from start to end points.
 class Wire:
     #the attributes (private) only can be reached by getters and setters.
-    __coords:List[Coords] = []
+    __points:List[Coords] = []
 
+    #the constructor of Wire receives a list of Coords (points) to define itself.
     def __init__(self, points:List[Coords]) -> None:
-        try:
-            if len(points) < 2:
-                raise AttributeError("Not enough points to a wire!")
-            self.insertWireP(points)
-        except AttributeError as ae:
-            print(ae)
-    
-    def insertWireP(self, points:List[Coords]) -> bool:
+        self.insertWireP(points)
+
+    #TODO #fix insertion function 
+    def insertWireP(self, points:List[Coords]) -> bool: #returns true if points is correctly inserted.
         ctrl = True
         try:
             for i in points:
-                for j in self.__coords:
-                    if j.getX()==i.getX() and j.getY()==i.getY():
-                        ctrl = False
-                        break
-                if ctrl:
-                    self.__coords.append(i)
-                ctrl = True
-        except:
-            print("Unexpected error: ", sys.exc_info()[0])
+                x = i.getX()
+                y = i.getY()
+                if x>=0 and y>=0:
+                    for j in self.__points:
+                        if j.getX()==x and j.getY()==y:
+                            ctrl = False
+                            break
+                    if ctrl:
+                        self.__points.append(i)
+                    ctrl = True
+            #self.refactorWire()
+            if len(self.__points)<2: #validation of condition to be a wire (line).
+                raise AttributeError("Not enough points to a wire!")
+        except AttributeError as ae:
+            self.__points = []
+            print(ae)
             return False
         else:
             return True
 
     def getWireP(self) -> List[Coords]:
-        return self.__coords
+        return self.__points
 
     def getWireStartP(self) -> Coords:
-        return self.__coords[0]
+        return self.__points[0]
     def getWireEndP(self) -> Coords:
-        return self.__coords[len(self.__coords)-1]
+        l = len(self.__points)
+        if l>0:
+            return self.__points[l-1]
+        else:
+            return self.__points[0]
     def getWireNextP(self, reference:Coords) -> Coords:
-        for i in self.__coords:
+        for i in self.__points:
             if i.getX()==reference.getX() and i.getY()==reference.getY():
-                return self.__coords[self.__coords.index(i) + 1]
-
+                return self.__points[self.__points.index(i) + 1]
+    
+    #TODO fix refactor function
+    def refactorWire(self) -> None: #reduce the number of points if they are at the same line.
+        ctrl = len(self.__points)-2
+        i = 0
+        while (ctrl - i):
+            if self.__points[i].getX()==self.__points[i+1].getX() and self.__points[i].getX()==self.__points[i+2].getX():
+                del(self.__points[i+1])
+                ctrl = len(self.__points)-2
+            else:
+                i = i+1
+        i = 0
+        while (ctrl - i):
+            if self.__points[i].getY()==self.__points[i+1].getY() and self.__points[i].getY()==self.__points[i+2].getY():
+                del(self.__points[i+1])
+                ctrl = len(self.__points)-2
+            else:
+                i = i+1
 
 """FUNCTIONS
 """
@@ -226,6 +307,17 @@ def connectedComponents(w:Wire, c1, c2) -> bool:
     not(isEqualPoints(c1.getCoords(), c2.getCoords())))
 
 
+e = Wire([Coords(10,20),Coords(10,20),Coords(10,40),Coords(10,30)])
+print(len(e.getWireP()))
+
+e.refactorWire()
+print(len(e.getWireP()))
+
+print(e.getWireEndP().getY())
+
+e.insertWireP([Coords(50,70)])
+
+print(e.getWireEndP().getY())
 
 
 """
@@ -236,4 +328,17 @@ def connectedComponents(w:Wire, c1, c2) -> bool:
     g = Gate(1, e1.getValue(), e2.getValue(), Coords(20,40))
 
     print(connectedComponents(w,e1,g))
+"""
+
+"""    def refactorWire(self) -> None: #reduce the number of points if they are at the same line.
+        l = len(self.__coords)-3
+        print(l)
+        for i in range(l):
+            if self.__coords[i].getX()==self.__coords[i+1].getX() and self.__coords[i].getX()==self.__coords[i+2].getX():
+                self.__coords.pop(i+1)
+                print(len(self.__coords))
+        for i in range(l):
+            if self.__coords[i].getY()==self.__coords[i+1].getY() and self.__coords[i].getY()==self.__coords[i+2].getY():
+                self.__coords.pop(i+1)
+                
 """
