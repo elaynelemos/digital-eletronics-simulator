@@ -12,76 +12,54 @@
 """
 
 from __future__ import annotations
+
 from typing import List
 from operator import xor
-import sys
+from util import *
+# import sys
+
+from OpenGL.GL import *
+from OpenGL.GLUT import *
+from OpenGL.GLU import *
 
 RELATIVE_GATEIN_X = 0
 RELATIVE_GATEIN_Y = 0
 RELATIVE_GATEOUT_X = 0
 RELATIVE_GATEOUT_Y = 0
+
+ORIENTATION_LR = 0
+ORIENTATION_UD = 1
+ORIENTATION_RL = 2
+ORIENTATION_DU = 3
 N_ENTRIES = 2
+
+COLOR_TRUE = Color(r=192.0/255)
+COLOR_FALSE = Color(b=192.0/255)
 
 """COMPONENT CLASSES > look at Coords, stopped there
 """
-#Coords: It's the "data type" of a point on the screen.
-class Coords:
-    #the attributes (private) only can be reached by getters and setters. Initiate coords with
-    #invalid number for screen to be treated if there's any error in insertion.
-    __x: int = None
-    __y: int = None
-    
-    #the constructor of Coords receives a coordinate pair.
-    def __init__(self, x:int, y:int) -> None:
-        self.setX(x)
-        self.setY(y)
-
-    def getX(self) -> int:
-        return self.__x 
-    def getY(self) -> int:
-        return self.__y
-    
-    def setX(self, x:int) -> bool: #returns True if succeeds.
-        try:
-            if not(isinstance(x, int)) or isinstance(x, bool): #Type validation.
-                raise ValueError("ValueError: integer expected to X coordinate. You entered a(n): ", type(x))
-        except ValueError as ve:
-            print(ve)
-            return False
-        else:
-            self.__x = x
-            return True
-
-    def setY(self, y:int) -> bool: #returns True if succeeds.
-        try:
-            if not(isinstance(y, int)) or isinstance(y, bool): #Type validation.
-                raise ValueError("ValueError: integer expected to Y coordinate. You entered a(n): ", type(y))
-        except ValueError as ve:
-            print(ve)
-            return False
-        else:
-            self.__y = y
-            return True
-
 
 #Entry: Represents a logic entry. It has a value itself. 
 #       Then cannot be connected to other entries (only outputs its own value).
-class Entry:
+class Entry(Element):
     #the attributes (private) only can be reached by getters and setters.
     __value:bool = None
     __coords:Coords = None
+    __orientation = ORIENTATION_LR
+    __size = 15.0
 
     #the constructor of Entry receives a logic value and the Coords where the entry should be placed.
-    def __init__(self, coords:Coords) -> None:
+    def __init__(self, coords:Coords = Coords(0.0,0.0)) -> None:
+        super().__init__()
         self.setCoords(coords)
 
     def getValue(self) -> bool:
         return self.__value
     def getCoords(self) -> Coords:
             return self.__coords
-    def getCoordX(self) -> int:
+    def getCoordX(self) -> float:
         return self.__coords.getX()   
-    def getCoordY(self) -> int:
+    def getCoordY(self) -> float:
         return self.__coords.getY()
 
     def setValue(self, value:bool) -> bool: #returns True if succeeds.
@@ -112,11 +90,59 @@ class Entry:
             return False
         else:
             return True
+    
+    def setRotation(self,sense=False):
+        self.__orientation = self.__orientation+ (1 if sense else -1)
+        self.__orientation = 0 if self.__orientation>3 else self.__orientation
+        self.__orientation = 3 if self.__orientation<0 else self.__orientation
+
+    def draw(self):
+        c = Coords(0,0).copy(self.getCoords())
+
+        # definindo a rotação do componente
+        if self.__orientation%2==0: # LR or RL
+            c = c.sum(Coords(-self.__size*2/3,0)) if int(self.__orientation/2)==0 else c.sum(Coords(self.__size*2/3,0))
+        else:                       # UD or DU
+            c = c.sum(Coords(0,-self.__size*2/3)) if int(self.__orientation/2)==0 else c.sum(Coords(0,self.__size*2/3))
+            
+        Color().apply()
+        glBegin(GL_LINES)
+        self.getCoords().apply()
+        c.apply()
+        glEnd()
+
+        #Retangulo
+        if self.__value:
+            COLOR_TRUE.apply()
+        else:
+            COLOR_FALSE.apply()
+
+        glBegin(GL_POLYGON)
+        rect_around(c,1/3*self.__size)
+        glEnd()
+
+        #borda
+        COLOR_STROKE.apply()
+        glLineWidth(STROKE_WIDTH)
+        glBegin(GL_LINES)
+        rect_around(c,1/3*self.__size)
+        glEnd()
+
+        #number
+        if self.__value:
+            digit_around(c,1/3*self.__size,1)
+        else:
+            digit_around(c,1/3*self.__size,0)
+
+        self.getCoords().draw()
+        
+        return self
 
 
 #Gate: Represents the main logic gates (or, and, xor, nor, nand) those must receives a pair of 
 #      logic values and are able to output its interpretation.
-class Gate:
+class Gate(Element):
+    id: int     = 0
     #the attributes (private) only can be reached by getters and setters.
     __gatetype:int = None
     __entry:List[Entry] = []
@@ -128,6 +154,7 @@ class Gate:
     def __init__(self, gatetype:int, coords:Coords) -> None: 
         self.setGateType(gatetype) #gate types: 1=or, 2=and, 3=xor, 4=nor, 5=nand
         self.setCoords(coords) #position of the gate
+        self.setName("G" + str(Gate.id))
     
     def getGateType(self) -> int:
         return self.__gatetype    
@@ -203,15 +230,20 @@ class Gate:
             A.setValue(not(self.getIn(0).getValue() and self.getIn(1).getValue()))
         return A
 
+    def draw(self):
+        return self
+
 
 #Wire: Represents the connector of the logic circuit. It's defined as a list of unique 
 #      Coords. Once connected to an logic component carries its value from start to end points.
-class Wire:
+class Wire(Element):
+    fill:Color  = Color(g=64.0/255)
     #the attributes (private) only can be reached by getters and setters.
     __points:List[Coords] = []
 
     #the constructor of Wire receives a list of Coords (points) to define itself.
     def __init__(self, points:List[Coords]) -> None:
+        super().__init__()
         self.insertWireP(points)
 
     #TODO #fix insertion function 
@@ -273,6 +305,9 @@ class Wire:
             else:
                 i = i+1
 
+    def draw(self):
+        return self
+
 """FUNCTIONS
 """
 #Each is[Component](): verifies the respective data type of a component. Returns True if its correct.
@@ -306,7 +341,7 @@ def connectedComponents(w:Wire, c1, c2) -> bool:
     return (wiredComponent(w, c1) and wiredComponent(w, c2) and
     not(isEqualPoints(c1.getCoords(), c2.getCoords())))
 
-
+"""
 e = Wire([Coords(10,20),Coords(10,20),Coords(10,40),Coords(10,30)])
 print(len(e.getWireP()))
 
@@ -318,7 +353,7 @@ print(e.getWireEndP().getY())
 e.insertWireP([Coords(50,70)])
 
 print(e.getWireEndP().getY())
-
+"""
 
 """
     #basic test ahead
