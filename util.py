@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 
 import math
 
+POINT_SPACE = 5.0
+
 class Color:
     __r: float = 0.0
     __g: float = 0.0
@@ -64,7 +66,7 @@ class Color:
         return "COLOR[r="+str(self.getR())+" g="+str(self.getG())+"b="+str(self.getB())+"]"
 
 COLOR_STROKE = Color()#black
-STROKE_WIDTH = 3.0
+STROKE_WIDTH = POINT_SPACE/2
 
 #Element: It's a abstract Class to define some Methods to next classes
 class Element(ABC):
@@ -103,7 +105,7 @@ class Element(ABC):
 class Coords(Element):
     #the attributes (private) only can be reached by getters and setters. Initiate coords with
     #invalid number for screen to be treated if there's any error in insertion.
-    radius: float = 2.0
+    radius: float = POINT_SPACE/3
     fill:   Color = Color(r=1.0,g=1.0,b=1.0)
     stroke: Color = Color() # black
     n_sides: int  = 15
@@ -168,7 +170,7 @@ class Coords(Element):
 
         COLOR_STROKE.apply()
         glLineWidth(STROKE_WIDTH)
-        glBegin(GL_LINES)
+        glBegin(GL_LINE_LOOP)
         for i in range(Coords.n_sides):
             glVertex3f(self.getX()+Coords.radius*math.sin(i*math.pi*2/Coords.n_sides), 
             self.getY()+Coords.radius*math.cos(i*math.pi*2/Coords.n_sides), 0)
@@ -176,52 +178,77 @@ class Coords(Element):
         return self
     def __str__ (self):
         return "COORDS[x: "+str(self.getX())+" y:"+str(self.getY())+"]"
+    def glTranslate(self):
+        glTranslatef(self.__x,self.__y,0.0)
 
-def rect_around(c:Coords,a:float,b:float=None):
+def rect_around(c:Coords,a:float,b:float=None, p:int=0):
     b = a if b==None else b
-    c.sum(Coords(-a,-b)).apply()
-    c.sum(Coords(-a,+b)).apply()
-    c.sum(Coords(+a,+b)).apply()
-    c.sum(Coords(+a,-b)).apply()
+    for i in range(4):
+        if(i+p)%4 ==0:
+            c.sum(Coords(-a,-b)).apply()
+        if(i+p)%4 ==1:
+            c.sum(Coords(-a,+b)).apply()
+        if(i+p)%4 ==2:
+            c.sum(Coords(+a,+b)).apply()
+        if(i+p)%4 ==3:
+            c.sum(Coords(+a,-b)).apply()
     return None
+
+def line_orientation(ci:Coords,o:int,a:float = POINT_SPACE, l=True)->Coords:
+    c = Coords(0,0).copy(ci)
+
+    # definindo a rotação do componente
+    if o%2==0: # LR or RL
+        c = c.sum(Coords(-a,0)) if int(o/2)==0 else c.sum(Coords(a,0))
+    else:                       # UD or DU
+        c = c.sum(Coords(0,-a)) if int(o/2)==0 else c.sum(Coords(0,a))
+
+    #Line 
+    if(l):
+        Color().apply()
+        glBegin(GL_LINES)
+        ci.apply()
+        c.apply()
+        glEnd()
+
+    return c
 
 def digit_around(c:Coords,a:float,d:int,p:bool=False):
     b = a/2
-    a = a*4/5
     w = a/8
     # 7 segments display based
     # segment a
-    if d in [0,2,3,5,6,7,8,9]:
+    if d in [0,2,3,5,6,7,8,9,10,12,14,15]:
         glBegin(GL_POLYGON)
         rect_around(c.sum(Coords(0,-a)),b,w)
         glEnd()
     # segment b
-    if d in [0,1,2,3,4,7,8,9]:
+    if d in [0,1,2,3,4,7,8,9,10,13]:
         glBegin(GL_POLYGON)
         rect_around(c.sum(Coords(b,-a/2)),w,a/2)
         glEnd()
     # segment c
-    if d in [0,1,3,4,5,6,7,8,9]:
+    if d in [0,1,3,4,5,6,7,8,9,10,11,13]:
         glBegin(GL_POLYGON)
         rect_around(c.sum(Coords(b,+a/2)),w,a/2)
         glEnd()
     # segment d
-    if d in [0,2,3,5,6,8,9]:
+    if d in [0,2,3,5,6,8,9,11,12,13,14]:
         glBegin(GL_POLYGON)
         rect_around(c.sum(Coords(0,+a)),b,w)
         glEnd()
     # segment e
-    if d in [0,2,6,8]:
+    if d in [0,2,6,8,10,11,12,13,14,15]:
         glBegin(GL_POLYGON)
         rect_around(c.sum(Coords(-b,+a/2)),w,a/2)
         glEnd()
     # segment f
-    if d in [0,4,5,6,8,9]:
+    if d in [0,4,5,6,8,9,10,11,12,14,15]:
         glBegin(GL_POLYGON)
         rect_around(c.sum(Coords(-b,-a/2)),w,a/2)
         glEnd()
     # segment g
-    if d in [2,3,4,5,6,8,9]:
+    if d in [2,3,4,5,6,8,9,10,11,13,14,15]:
         glBegin(GL_POLYGON)
         rect_around(c,b,w)
         glEnd()

@@ -33,6 +33,14 @@ ORIENTATION_RL = 2
 ORIENTATION_DU = 3
 N_ENTRIES = 2
 
+GATE_TYPE_NOT = 0
+GATE_TYPE_OR = 1
+GATE_TYPE_AND = 2
+GATE_TYPE_XOR = 3
+GATE_TYPE_NOR = 4
+GATE_TYPE_NAND = 5
+GATE_TYPE_XNOR = 6
+
 COLOR_TRUE = Color(r=192.0/255)
 COLOR_FALSE = Color(b=192.0/255)
 
@@ -46,7 +54,7 @@ class Entry(Element):
     __value:bool = None
     __coords:Coords = None
     __orientation = ORIENTATION_LR
-    __size = 15.0
+    __size = POINT_SPACE*4
 
     #the constructor of Entry receives a logic value and the Coords where the entry should be placed.
     def __init__(self, coords:Coords = Coords(0.0,0.0)) -> None:
@@ -97,46 +105,194 @@ class Entry(Element):
         self.__orientation = 3 if self.__orientation<0 else self.__orientation
 
     def draw(self):
-        c = Coords(0,0).copy(self.getCoords())
+        #line
+        c = line_orientation(self.getCoords(),self.__orientation,a = self.__size*3/4)
+        d = line_orientation(self.getCoords(),self.__orientation,a = self.__size*1/4, l=True)
+        
 
-        # definindo a rotação do componente
-        if self.__orientation%2==0: # LR or RL
-            c = c.sum(Coords(-self.__size*2/3,0)) if int(self.__orientation/2)==0 else c.sum(Coords(self.__size*2/3,0))
-        else:                       # UD or DU
-            c = c.sum(Coords(0,-self.__size*2/3)) if int(self.__orientation/2)==0 else c.sum(Coords(0,self.__size*2/3))
-            
-        Color().apply()
-        glBegin(GL_LINES)
-        self.getCoords().apply()
-        c.apply()
-        glEnd()
-
-        #Retangulo
+        #Polygon
         if self.__value:
             COLOR_TRUE.apply()
         else:
             COLOR_FALSE.apply()
 
         glBegin(GL_POLYGON)
-        rect_around(c,1/3*self.__size)
+        rect_around(c,1/4*self.__size,p=3-self.__orientation)
+        d.apply()
         glEnd()
 
-        #borda
+
+
+        #bord
         COLOR_STROKE.apply()
         glLineWidth(STROKE_WIDTH)
-        glBegin(GL_LINES)
-        rect_around(c,1/3*self.__size)
+        glBegin(GL_LINE_LOOP)
+        rect_around(c,1/4*self.__size,p=3-self.__orientation)
+        d.apply()
         glEnd()
 
         #number
         if self.__value:
-            digit_around(c,1/3*self.__size,1)
+            digit_around(c,1/4*0.6*self.__size,1)
         else:
-            digit_around(c,1/3*self.__size,0)
+            digit_around(c,1/4*0.6*self.__size,0)
 
-        self.getCoords().draw()
+        #self.getCoords().draw()
         
         return self
+
+class Checker(Element):
+    #the attributes (private) only can be reached by getters and setters.
+    __value:bool = None
+    __coords:Coords = None
+    __orientation = ORIENTATION_RL
+    __size = POINT_SPACE*3
+
+    #the constructor of Entry receives a logic value and the Coords where the entry should be placed.
+    def __init__(self, coords:Coords = Coords(0.0,0.0)) -> None:
+        super().__init__()
+        self.setCoords(coords)
+
+    def getValue(self) -> bool:
+        return self.__value
+    def getCoords(self) -> Coords:
+            return self.__coords
+    def getCoordX(self) -> float:
+        return self.__coords.getX()   
+    def getCoordY(self) -> float:
+        return self.__coords.getY()
+
+    def setValue(self, value:bool) -> bool: #returns True if succeeds.
+        try:
+            if not(isinstance(value,bool)):
+                raise ValueError("ValueError: Logic value expected to entry. You entered a(n): ", type(value))
+        except ValueError as ve:
+            print(ve)
+            return False
+        else:
+            self.__value = value
+            return True
+
+    def setCoords(self, coords:Coords) -> bool: #returns True if both coords are valid.
+        self.__coords = coords
+        if self.__coords.getX()<0 or self.__coords.getY()<0:
+            return False
+        else:
+            return True
+    
+    def setRotation(self,sense=False):
+        self.__orientation = self.__orientation+ (1 if sense else -1)
+        self.__orientation = 0 if self.__orientation>3 else self.__orientation
+        self.__orientation = 3 if self.__orientation<0 else self.__orientation
+
+    def draw(self):
+
+        #line
+        c = line_orientation(self.getCoords(),self.__orientation,a = self.__size*2/3, l=True)
+
+        #Polygon
+        if self.__value:
+            COLOR_TRUE.apply()
+        else:
+            COLOR_FALSE.apply()
+
+        glBegin(GL_POLYGON)
+        rect_around(c,1/3*self.__size,p=3-self.__orientation)
+        glEnd()
+
+        #bord
+        COLOR_STROKE.apply()
+        glLineWidth(STROKE_WIDTH)
+        glBegin(GL_LINE_LOOP)
+        rect_around(c,1/3*self.__size,p=3-self.__orientation)
+        glEnd()
+
+        #number
+        if self.__value:
+            digit_around(c,1/3*0.6*self.__size,1)
+        else:
+            digit_around(c,1/3*0.6*self.__size,0)
+
+        #self.getCoords().draw()
+        
+        return self
+
+class Display(Element):
+    __checks = [None]*4
+    __coords:Coords = None
+    __fill:Color = Color()
+    __ligh_on:Color = Color(r=1.0)
+    __ligh_off:Color = Color(r=0.2)
+    __orientation = ORIENTATION_RL
+    __size = POINT_SPACE*4
+    def __init__(self,coords:Coords = Coords(0.0,0.0)):
+        self.setCoords(coords)
+        c = Coords(0.0,0.0)
+        for i in range(4):
+            self.__checks[i] = Checker()
+            # definindo a rotação do componente
+            if self.__orientation%2==0: # LR or RL
+                self.__checks[i].setCoords(c.sum(Coords(self.__size*1/2,-self.__size*3/8 + i*self.__size*1/4)) if int(self.__orientation/2)==0 else c.sum(Coords(-self.__size*1/2,-self.__size*3/8 + i*self.__size*1/4)))
+            else:                       # UD or DU
+                self.__checks[i].setCoords(c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4,self.__size*1/2)) if int(self.__orientation/2)==0 else c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4,-self.__size*1/2)))
+    def getCheck(self,i:int):
+        if(i<4 and i>=0):
+            return self.__checks[i]
+        return None
+    def setCheck(self,i:int,v:bool):
+        if(i<4 and i>=0):
+            self.__checks[i].setValue(v)
+        return self
+    def setCoords(self, coords:Coords) -> bool: #returns True if both coords are valid.
+        self.__coords = coords
+        if self.__coords.getX()<0 or self.__coords.getY()<0:
+            return False
+        else:
+            return True
+    
+    def setRotation(self,sense=False):
+        self.__orientation = self.__orientation+ (1 if sense else -1)
+        self.__orientation = 0 if self.__orientation>3 else self.__orientation
+        self.__orientation = 3 if self.__orientation<0 else self.__orientation
+
+        c = Coords(0.0,0.0)
+        for i in range(4):
+            # definindo a rotação do componente
+            if self.__orientation%2==0: # LR or RL
+                self.__checks[i].setCoords(c.sum(Coords(self.__size*1/2,-self.__size*3/8 + i*self.__size*1/4)) if int(self.__orientation/2)==0 else c.sum(Coords(-self.__size*1/2,-self.__size*3/8 + i*self.__size*1/4)))
+            else:                       # UD or DU
+                self.__checks[i].setCoords(c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4,self.__size*1/2)) if int(self.__orientation/2)==0 else c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4,-self.__size*1/2)))
+    
+    def draw(self):
+        v = 0
+        for i in range(4):
+            v += (2**i)*(1 if self.__checks[i].getValue() else 0)
+
+        # Rect
+
+        self.__fill.apply()
+        glBegin(GL_POLYGON)
+        rect_around(self.__coords,(self.__size/4 if self.__orientation%2==0 else self.__size*1/2),(self.__size*1/2 if self.__orientation%2==0 else self.__size/4))
+        glEnd()
+
+        #OFF Digit
+        self.__ligh_off.apply()
+        digit_around(self.__coords,self.__size*(0.9 if self.__orientation%2==0 else 0.5)/3,8)
+        
+        #ON Digit
+        self.__ligh_on.apply()
+        digit_around(self.__coords,self.__size*(0.9 if self.__orientation%2==0 else 0.5)/3,v)
+
+        #set center
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        self.__coords.glTranslate()
+
+        for i in self.__checks:
+            line_orientation(i.getCoords(),self.__orientation,l=True)
+        glPopMatrix()
+
+
 
 
 #Gate: Represents the main logic gates (or, and, xor, nor, nand) those must receives a pair of 
@@ -148,6 +304,10 @@ class Gate(Element):
     __entry:List[Entry] = []
     __coords:Coords = None
     __out:Coords = None
+
+    __fill:Color = Color()
+    __orientation = ORIENTATION_RL
+    __size = POINT_SPACE*4
 
     #the constructor of Gate receives the gate type, two logic values and the Coords where it
     #should be placed.
@@ -218,16 +378,20 @@ class Gate(Element):
 
     def gateOut(self) -> Entry:
         A = Entry(Coords(self.getCoordX()+self.getOutCoordX(), self.getCoordY()+self.getOutCoordY()))
-        if self.getGateType()==1:
+        if self.getGateType()==GATE_TYPE_NOT:
+            A.setValue(not self.getIn(0).getValue())
+        elif self.getGateType()==GATE_TYPE_OR:
             A.setValue(self.getIn(0).getValue() or self.getIn(1).getValue())
-        elif self.getGateType()==2:
+        elif self.getGateType()==GATE_TYPE_AND:
             A.setValue(self.getIn(0).getValue() and self.getIn(1).getValue())
-        elif self.getGateType()==3:
+        elif self.getGateType()==GATE_TYPE_XOR:
             A.setValue(self.getIn(0).getValue() != self.getIn(1).getValue())
-        elif self.getGateType()==4:
+        elif self.getGateType()==GATE_TYPE_NOR:
             A.setValue(not(self.getIn(0).getValue() or self.getIn(1).getValue()))
-        elif self.getGateType()==5:
+        elif self.getGateType()==GATE_TYPE_NAND:
             A.setValue(not(self.getIn(0).getValue() and self.getIn(1).getValue()))
+        elif self.getGateType()==GATE_TYPE_XNOR:
+            A.setValue(self.getIn(0).getValue() == self.getIn(1).getValue())
         return A
 
     def draw(self):
