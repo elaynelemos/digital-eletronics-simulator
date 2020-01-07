@@ -14,14 +14,14 @@ class Window(Element):
         self.size       = Coords(0,0)
         self.zoom       = 1.0
         self.elements   = []
-    def setCenter(self,center:Coord) -> Window: 
+    def setCenter(self,center:Coords): 
         self.center = center
         return self
 
-    def setSize(self,size:Coord) -> Window:
+    def setSize(self,size:Coords):
         self.size = size
         return self
-    def setZoom(self, zoom) -> Window:
+    def setZoom(self, zoom):
         if(isinstance(zoom, bool)):
             self.zoom = self.zoom * (1+Window.__factor) if zoom else self.zoom / (1+Window.__factor)
         elif(isinstance(zoom, float)):
@@ -35,7 +35,7 @@ class Window(Element):
             return self.elements[index]
         
 
-    def draw(self) -> Window :
+    def draw(self):
         for i in self.elements:
-            i.print()
+            i.draw()
         return self
