@@ -183,6 +183,7 @@ class Coords(Element):
 
 def rect_around(c:Coords,a:float,b:float=None, p:int=0):
     b = a if b==None else b
+
     for i in range(4):
         if(i+p)%4 ==0:
             c.sum(Coords(-a,-b)).apply()
@@ -192,8 +193,22 @@ def rect_around(c:Coords,a:float,b:float=None, p:int=0):
             c.sum(Coords(+a,+b)).apply()
         if(i+p)%4 ==3:
             c.sum(Coords(+a,-b)).apply()
+
     return None
 
+def rect_polygon_around(c:Coords,a:float,b:float=None, p:int=0,angle:float=0):
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+
+    c.glTranslate()
+    glRotatef(angle,0.0,0.0,1.0)
+
+    glBegin(GL_POLYGON)
+    rect_around(Coords(0.0,0.0),a,b,p)
+    glEnd()
+
+    glPopMatrix()
+    
 def line_orientation(ci:Coords,o:int,a:float = POINT_SPACE, l=True)->Coords:
     c = Coords(0,0).copy(ci)
 
@@ -213,48 +228,78 @@ def line_orientation(ci:Coords,o:int,a:float = POINT_SPACE, l=True)->Coords:
 
     return c
 
-def digit_around(c:Coords,a:float,d:int,p:bool=False):
+def digit_around(c:Coords,a:float,d:int,p:bool=False,bin=False):
     b = a/2
     w = a/8
     # 7 segments display based
     # segment a
-    if d in [0,2,3,5,6,7,8,9,10,12,14,15]:
-        glBegin(GL_POLYGON)
-        rect_around(c.sum(Coords(0,-a)),b,w)
-        glEnd()
+    if (bin and d&1!=0) or (not bin and d in [0,2,3,5,6,7,8,9,10,12,14,15]):
+        rect_polygon_around(c.sum(Coords(0,-a)),b,w)
     # segment b
-    if d in [0,1,2,3,4,7,8,9,10,13]:
-        glBegin(GL_POLYGON)
-        rect_around(c.sum(Coords(b,-a/2)),w,a/2)
-        glEnd()
+    if (bin and d&2!=0) or (not bin and d in [0,1,2,3,4,7,8,9,10,13]):
+        rect_polygon_around(c.sum(Coords(b,-a/2)),w,a/2)
     # segment c
-    if d in [0,1,3,4,5,6,7,8,9,10,11,13]:
-        glBegin(GL_POLYGON)
-        rect_around(c.sum(Coords(b,+a/2)),w,a/2)
-        glEnd()
+    if (bin and d&4!=0) or (not bin and d in [0,1,3,4,5,6,7,8,9,10,11,13]):
+        rect_polygon_around(c.sum(Coords(b,+a/2)),w,a/2)
     # segment d
-    if d in [0,2,3,5,6,8,9,11,12,13,14]:
-        glBegin(GL_POLYGON)
-        rect_around(c.sum(Coords(0,+a)),b,w)
-        glEnd()
+    if (bin and d&8!=0) or (not bin and d in [0,2,3,5,6,8,9,11,12,13,14]):
+        rect_polygon_around(c.sum(Coords(0,+a)),b,w)
     # segment e
-    if d in [0,2,6,8,10,11,12,13,14,15]:
-        glBegin(GL_POLYGON)
-        rect_around(c.sum(Coords(-b,+a/2)),w,a/2)
-        glEnd()
+    if (bin and d&16!=0) or (not bin and d in [0,2,6,8,10,11,12,13,14,15]):
+        rect_polygon_around(c.sum(Coords(-b,+a/2)),w,a/2)
     # segment f
-    if d in [0,4,5,6,8,9,10,11,12,14,15]:
-        glBegin(GL_POLYGON)
-        rect_around(c.sum(Coords(-b,-a/2)),w,a/2)
-        glEnd()
+    if (bin and d&32!=0) or (not bin and d in [0,4,5,6,8,9,10,11,12,14,15]):
+        rect_polygon_around(c.sum(Coords(-b,-a/2)),w,a/2)
     # segment g
-    if d in [2,3,4,5,6,8,9,10,11,13,14,15]:
-        glBegin(GL_POLYGON)
-        rect_around(c,b,w)
-        glEnd()
+    if (bin and d&64!=0) or (not bin and d in [2,3,4,5,6,8,9,10,11,13,14,15]):
+        rect_polygon_around(c,b,w)
     # segment .
-    if p:
-        glBegin(GL_POLYGON)
-        rect_around(c.sum(Coords(b+4*w,+a)),w,w)
-        glEnd()
+    if p or bin and d&128!=0:
+        rect_polygon_around(c.sum(Coords(b+4*w,+a)),w,w)
     return None
+
+def alfa_num_around(c:Coords,a:float,d,p:bool=False,sc:bool=False,bin=False):
+    b = a/2
+    w = a/8
+    
+    # 14 segments display based
+    
+    # segments a-f (display 7 segments based)
+    if bin:
+        digit_around(c,a,d&0x3F,p=p,bin = bin)
+    else:
+        v = 0
+        v +=  1 if d in [b'A',b'B',b'C',b'D',b'E',b'F',b'G',b'I',b'O',b'P',b'Q',b'R',b'S',b'T',b'Z',b'2',b'3',b'5',b'6',b'7',b'8',b'9',b'0',b'\0'] else 0
+        v +=  2 if d in [b'A',b'B',b'D',b'H',b'J',b'M',b'N',b'O',b'P',b'Q',b'R',b'U',b'W',b'1',b'2',b'3',b'4',b'7',b'8',b'9',b'0',b'\0'] else 0
+        v +=  4 if d in [b'A',b'B',b'D',b'G',b'H',b'J',b'M',b'N',b'O',b'Q',b'S',b'U',b'W',b'1',b'3',b'4',b'5',b'6',b'7',b'8',b'9',b'0',b'\0'] else 0
+        v +=  8 if d in [b'B',b'C',b'D',b'E',b'G',b'I',b'J',b'L',b'O',b'Q',b'S',b'U',b'Z',b'2',b'3',b'5',b'6',b'8',b'9',b'0',b'\0'] else 0
+        v += 16 if d in [b'A',b'C',b'E',b'F',b'G',b'H',b'J',b'K',b'L',b'M',b'N',b'O',b'P',b'Q',b'R',b'U',b'V',b'W',b'2',b'6',b'8',b'0',b'\0'] else 0
+        v += 32 if d in [b'A',b'C',b'E',b'F',b'G',b'H',b'K',b'L',b'M',b'N',b'O',b'P',b'Q',b'R',b'S',b'U',b'V',b'W',b'4',b'5',b'6',b'8',b'9',b'0',b'\0'] else 0
+        digit_around(c,a,v,p,bin = True)
+
+    # segment g
+    if (bin and d&64!=0) or (not bin and d in [b'A',b'E',b'F',b'H',b'K',b'P',b'R',b'S',b'2',b'4',b'5',b'6',b'8',b'9',b'\0']):
+        rect_polygon_around(c.sum(Coords(-b/2,0)),b/2,w)
+
+    # segment h TODO
+    if (bin and d&128!=0) or (not bin and d in [b'M',b'N',b'X',b'Y',b'\0']):
+        rect_polygon_around(c.sum(Coords(-b/2,-a/2)),a/2,w,angle=63.7)
+    
+    # segment j
+    if (bin and d&256!=0) or (not bin and d in [b'B',b'D',b'I',b'T',b'\0']):
+        rect_polygon_around(c.sum(Coords(0,-a/2)),w,a/2)
+    # segment k TODO
+    if (bin and d&512!=0) or (not bin and d in [b'K',b'M',b'V',b'X',b'Y',b'Z',b'1',b'0',b'\0']):
+        rect_polygon_around(c.sum(Coords(b/2,-a/2)),a/2,w,angle=-63.7)
+    # segment m
+    if (bin and d&1024!=0) or (not bin and d in [b'A',b'B',b'G',b'H',b'P',b'R',b'S',b'2',b'3',b'4',b'5',b'6',b'8',b'9',b'\0']):
+        rect_polygon_around(c.sum(Coords(b/2,0)),b/2,w)
+    # segment n TODO
+    if (bin and d&2048!=0) or (not bin and d in [b'K',b'N',b'Q',b'R',b'W',b'X',b'\0']):
+        rect_polygon_around(c.sum(Coords(b/2,a/2)),a/2,w,angle=63.7)
+    # segment p
+    if (bin and d&4096!=0) or (not bin and d in [b'B',b'D',b'I',b'T',b'Y',b'\0']):
+        rect_polygon_around(c.sum(Coords(0,a/2)),w,a/2)
+    # segment r TODO
+    if (bin and d&8192!=0) or (not bin and d in [b'V',b'W',b'X',b'Z',b'0',b'\0']):
+        rect_polygon_around(c.sum(Coords(-b/2,a/2)),a/2,w,angle=-63.7)

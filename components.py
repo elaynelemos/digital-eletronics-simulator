@@ -37,6 +37,7 @@ N_ENTRIES = 2
 
 COLOR_TRUE = Color(r=192.0/255)
 COLOR_FALSE = Color(b=192.0/255)
+COLOR_NONE = Color(r=96.0/255, g=96.0/255, b=96.0/255)
 
 """COMPONENT CLASSES > look at Coords, stopped there
 """
@@ -107,10 +108,12 @@ class Entry(Element):
             self.getCoords(), self.__orientation, a=self.__size*1/4, l=True)
 
         # Polygon
-        if self.__value:
+        if self.__value==True:
             COLOR_TRUE.apply()
-        else:
+        elif self.__value==False:
             COLOR_FALSE.apply()
+        else:
+            COLOR_NONE.apply()
 
         glBegin(GL_POLYGON)
         rect_around(c, 1/4*self.__size, p=3-self.__orientation)
@@ -126,10 +129,12 @@ class Entry(Element):
         glEnd()
 
         # number
-        if self.__value:
+        if self.__value==True:
             digit_around(c, 1/4*0.6*self.__size, 1)
-        else:
+        elif self.__value==False:
             digit_around(c, 1/4*0.6*self.__size, 0)
+        else:
+            digit_around(c, 1/4*0.6*self.__size, -1)
 
         # self.getCoords().draw()
 
@@ -185,10 +190,12 @@ class Checker(Element):
             self.getCoords(), self.__orientation, a=self.__size*2/3, l=True)
 
         # Polygon
-        if self.__value:
+        if self.__value==True:
             COLOR_TRUE.apply()
-        else:
+        elif self.__value==False:
             COLOR_FALSE.apply()
+        else:
+            COLOR_NONE.apply()
 
         glBegin(GL_POLYGON)
         rect_around(c, 1/3*self.__size, p=3-self.__orientation)
@@ -202,10 +209,12 @@ class Checker(Element):
         glEnd()
 
         # number
-        if self.__value:
-            digit_around(c, 1/3*0.6*self.__size, 1)
+        if self.__value==True:
+            digit_around(c, 1/4*0.6*self.__size, 1)
+        elif self.__value==False:
+            digit_around(c, 1/4*0.6*self.__size, 0)
         else:
-            digit_around(c, 1/3*0.6*self.__size, 0)
+            digit_around(c, 1/4*0.6*self.__size, -1)
 
         # self.getCoords().draw()
 
@@ -308,17 +317,125 @@ class KeyBoard(Element):
     __orientation = ORIENTATION_LR
     __size = POINT_SPACE*4
 
+    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
+        self.setCoords(coords)
+        c = Coords(0.0, 0.0)
+        self.__updateCoords()
+
     def __updateCoords(self):
         c = Coords(0.0, 0.0)
+        self.__entries = []
         for i in range(4):
-            self.__entries[i] = Entry()
+            self.__entries.append(Entry())
+            self.__entries[i].setValue(False)
             # definindo a rotação do componente
             if self.__orientation % 2 == 0:  # LR or RL
-                self.__checks[i].setCoords(c.sum(Coords(self.__size*1/2, -self.__size*3/8 + i*self.__size*1/4)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/2, -self.__size*3/8 + i*self.__size*1/4)))
+                self.__entries[i].setCoords(c.sum(Coords(self.__size*5/8, -self.__size*3/8 + i*self.__size*1/4)) if int(
+                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*5/8, -self.__size*3/8 + i*self.__size*5/4)))
             else:                       # UD or DU
-                self.__checks[i].setCoords(c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, self.__size*1/2)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, -self.__size*1/2)))
+                self.__entries[i].setCoords(c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, self.__size*1/8)) if int(
+                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, -self.__size*5/8)))
+
+    def getEntry(self, i: int):
+        if(i < 4 and i >= 0):
+            return self.__entries[i]
+        return None
+
+    def getEntries(self):
+        return self.__entries
+
+    def getCoords(self) -> Coords:
+        return self.__coords
+
+    def setEntry(self, v:bytes):
+        b0 = v in [b'1',b'3',b'5',b'7',b'9',b'B',b'b',b'D',b'd',b'F',b'f']
+        b1 = v in [b'2',b'3',b'6',b'7',b'A',b'a',b'B',b'b',b'E',b'e',b'F',b'f']
+        b2 = v in [b'4',b'5',b'6',b'7',b'C',b'c',b'D',b'd',b'E',b'e',b'F',b'f']
+        b3 = v in [b'8',b'9',b'A',b'a',b'B',b'b',b'C',b'c',b'D',b'd',b'E',b'e',b'F',b'f']
+        self.__entries[0].setValue(b0)
+        self.__entries[1].setValue(b1)
+        self.__entries[2].setValue(b2)
+        self.__entries[3].setValue(b3)
+        
+        return b0 or b1 or b2 or b3 or v == b'0'
+
+    # returns True if both coords are valid.
+    def setCoords(self, coords: Coords) -> bool:
+        self.__coords = coords
+        if self.__coords.getX() < 0 or self.__coords.getY() < 0:
+            return False
+        else:
+            return True
+
+    def __setCenter(self):
+        self.__coords.glTranslate()
+        glRotatef(90.0*self.__orientation,0.0,0.0,1.0)
+
+    def setRotation(self, sense=False):
+        self.__orientation = self.__orientation + (1 if sense else -1)
+        self.__orientation = 0 if self.__orientation > 3 else self.__orientation
+        self.__orientation = 3 if self.__orientation < 0 else self.__orientation
+
+        self.__updateCoords()
+
+    def draw(self):
+        v = 0
+        for i in range(4):
+            v += (2**i)*(1 if self.__entries[i].getValue() else 0)
+
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        self.__setCenter()
+
+        self.__fill.apply()
+        glBegin(GL_POLYGON)
+        rect_around(Coords(0.0,0.0),self.__size*3/8,b=self.__size/2)
+        glEnd()
+
+        COLOR_STROKE.apply()
+        glBegin(GL_LINE_LOOP)
+        rect_around(Coords(0.0,0.0),self.__size*3/8,b=self.__size/2)
+        glEnd()
+
+        self.__ligh_off.apply()
+        glBegin(GL_POLYGON)
+        rect_around(Coords(0.0,-self.__size*5/16),self.__size/4,b=self.__size/8)
+        glEnd()
+
+        glPushMatrix()
+        Coords(0.0,-self.__size*5/16).glTranslate()
+        glRotatef(-90.0*self.__orientation,0.0,0.0,1.0)
+
+        self.__ligh_on.apply()
+        digit_around(Coords(0.0,0.0),self.__size *
+                     (0.40 if self.__orientation % 2 == 0 else 0.65)/4,v)
+
+        glPopMatrix()
+
+        COLOR_STROKE.apply()
+        glBegin(GL_LINES)
+        for i in range(5):
+            Coords(self.__size/8*(-2+i),-self.__size/8).apply()
+            Coords(self.__size/8*(-2+i),self.__size*3/8).apply()
+
+        for i in range(5):
+            Coords(-self.__size/4,self.__size/8 * (-1 + i)).apply()
+            Coords(self.__size/4,self.__size/8 * (-1 + i)).apply()
+        glEnd()
+
+
+
+        glPopMatrix()
+
+        for entry in self.__entries:
+            point = line_orientation(entry.getCoords().sum(self.__coords),self.__orientation,self.__size/4)
+            if entry.getValue()==True:
+                COLOR_TRUE.apply()
+            elif entry.getValue()==False:
+                COLOR_FALSE.apply()
+            else:
+                COLOR_NONE.apply()
+            rect_polygon_around(point,self.__size/16)
 
 # Gate: Represents the main logic gates (or, and, xor, nor, nand) those must receives a pair of
 #      logic values and are able to output its interpretation.
