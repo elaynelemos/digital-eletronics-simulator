@@ -134,7 +134,6 @@ class Entry(Element):
         return self
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        print("entrei")
         c = line_orientation(
             self.getCoords(), self.__orientation, a=self.__size*3/4)
         if(event_type == EVENT_TYPE_MOUSE and state == GLUT_UP and coords.in_around(c, self.__size/4)):
