@@ -29,15 +29,8 @@ RELATIVE_GATEIN_Y = 0
 RELATIVE_GATEOUT_X = 0
 RELATIVE_GATEOUT_Y = 0
 
-ORIENTATION_LR = 0
-ORIENTATION_UD = 1
-ORIENTATION_RL = 2
-ORIENTATION_DU = 3
 N_ENTRIES = 2
 
-COLOR_TRUE = Color(r=192.0/255)
-COLOR_FALSE = Color(b=192.0/255)
-COLOR_NONE = Color(r=96.0/255, g=96.0/255, b=96.0/255)
 
 """COMPONENT CLASSES > look at Coords, stopped there
 """
@@ -108,9 +101,9 @@ class Entry(Element):
             self.getCoords(), self.__orientation, a=self.__size*1/4, l=True)
 
         # Polygon
-        if self.__value==True:
+        if self.__value == True:
             COLOR_TRUE.apply()
-        elif self.__value==False:
+        elif self.__value == False:
             COLOR_FALSE.apply()
         else:
             COLOR_NONE.apply()
@@ -129,9 +122,9 @@ class Entry(Element):
         glEnd()
 
         # number
-        if self.__value==True:
+        if self.__value == True:
             digit_around(c, 1/4*0.6*self.__size, 1)
-        elif self.__value==False:
+        elif self.__value == False:
             digit_around(c, 1/4*0.6*self.__size, 0)
         else:
             digit_around(c, 1/4*0.6*self.__size, -1)
@@ -139,6 +132,16 @@ class Entry(Element):
         # self.getCoords().draw()
 
         return self
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        print("entrei")
+        c = line_orientation(
+            self.getCoords(), self.__orientation, a=self.__size*3/4)
+        if(event_type == EVENT_TYPE_MOUSE and state == GLUT_UP and coords.in_around(c, self.__size/4)):
+            self.toogleV()
+            return True
+        return False
+
 
 class Checker(Element):
     # the attributes (private) only can be reached by getters and setters.
@@ -190,9 +193,9 @@ class Checker(Element):
             self.getCoords(), self.__orientation, a=self.__size*2/3, l=True)
 
         # Polygon
-        if self.__value==True:
+        if self.__value == True:
             COLOR_TRUE.apply()
-        elif self.__value==False:
+        elif self.__value == False:
             COLOR_FALSE.apply()
         else:
             COLOR_NONE.apply()
@@ -209,9 +212,9 @@ class Checker(Element):
         glEnd()
 
         # number
-        if self.__value==True:
+        if self.__value == True:
             digit_around(c, 1/4*0.6*self.__size, 1)
-        elif self.__value==False:
+        elif self.__value == False:
             digit_around(c, 1/4*0.6*self.__size, 0)
         else:
             digit_around(c, 1/4*0.6*self.__size, -1)
@@ -219,6 +222,11 @@ class Checker(Element):
         # self.getCoords().draw()
 
         return self
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+
+        return False
+
 
 class Display(Element):
     __checks = [None]*4
@@ -279,7 +287,6 @@ class Display(Element):
         for i in range(4):
             v += (2**i)*(1 if self.__checks[i].getValue() else 0)
 
-
         # Rect
 
         self.__fill.apply()
@@ -307,7 +314,10 @@ class Display(Element):
             line_orientation(i.getCoords(), self.__orientation, l=True)
         glPopMatrix()
 
-# TODO finish this
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        return False
+
+
 class KeyBoard(Element):
     __entries: List[Entry] = []
     __coords: Coords = None
@@ -347,16 +357,20 @@ class KeyBoard(Element):
     def getCoords(self) -> Coords:
         return self.__coords
 
-    def setEntry(self, v:bytes):
-        b0 = v in [b'1',b'3',b'5',b'7',b'9',b'B',b'b',b'D',b'd',b'F',b'f']
-        b1 = v in [b'2',b'3',b'6',b'7',b'A',b'a',b'B',b'b',b'E',b'e',b'F',b'f']
-        b2 = v in [b'4',b'5',b'6',b'7',b'C',b'c',b'D',b'd',b'E',b'e',b'F',b'f']
-        b3 = v in [b'8',b'9',b'A',b'a',b'B',b'b',b'C',b'c',b'D',b'd',b'E',b'e',b'F',b'f']
+    def setEntry(self, v: bytes):
+        b0 = v in [b'1', b'3', b'5', b'7', b'9',
+                   b'B', b'b', b'D', b'd', b'F', b'f']
+        b1 = v in [b'2', b'3', b'6', b'7', b'A',
+                   b'a', b'B', b'b', b'E', b'e', b'F', b'f']
+        b2 = v in [b'4', b'5', b'6', b'7', b'C',
+                   b'c', b'D', b'd', b'E', b'e', b'F', b'f']
+        b3 = v in [b'8', b'9', b'A', b'a', b'B', b'b',
+                   b'C', b'c', b'D', b'd', b'E', b'e', b'F', b'f']
         self.__entries[0].setValue(b0)
         self.__entries[1].setValue(b1)
         self.__entries[2].setValue(b2)
         self.__entries[3].setValue(b3)
-        
+
         return b0 or b1 or b2 or b3 or v == b'0'
 
     # returns True if both coords are valid.
@@ -369,7 +383,7 @@ class KeyBoard(Element):
 
     def __setCenter(self):
         self.__coords.glTranslate()
-        glRotatef(90.0*self.__orientation,0.0,0.0,1.0)
+        glRotatef(90.0*self.__orientation, 0.0, 0.0, 1.0)
 
     def setRotation(self, sense=False):
         self.__orientation = self.__orientation + (1 if sense else -1)
@@ -389,56 +403,62 @@ class KeyBoard(Element):
 
         self.__fill.apply()
         glBegin(GL_POLYGON)
-        rect_around(Coords(0.0,0.0),self.__size*3/8,b=self.__size/2)
+        rect_around(Coords(0.0, 0.0), self.__size*3/8, b=self.__size/2)
         glEnd()
 
         COLOR_STROKE.apply()
         glBegin(GL_LINE_LOOP)
-        rect_around(Coords(0.0,0.0),self.__size*3/8,b=self.__size/2)
+        rect_around(Coords(0.0, 0.0), self.__size*3/8, b=self.__size/2)
         glEnd()
 
         self.__ligh_off.apply()
         glBegin(GL_POLYGON)
-        rect_around(Coords(0.0,-self.__size*5/16),self.__size/4,b=self.__size/8)
+        rect_around(Coords(0.0, -self.__size*5/16),
+                    self.__size/4, b=self.__size/8)
         glEnd()
 
         glPushMatrix()
-        Coords(0.0,-self.__size*5/16).glTranslate()
-        glRotatef(-90.0*self.__orientation,0.0,0.0,1.0)
+        Coords(0.0, -self.__size*5/16).glTranslate()
+        glRotatef(-90.0*self.__orientation, 0.0, 0.0, 1.0)
 
         self.__ligh_on.apply()
-        digit_around(Coords(0.0,0.0),self.__size *
-                     (0.40 if self.__orientation % 2 == 0 else 0.65)/4,v)
+        digit_around(Coords(0.0, 0.0), self.__size *
+                     (0.40 if self.__orientation % 2 == 0 else 0.65)/4, v)
 
         glPopMatrix()
 
         COLOR_STROKE.apply()
         glBegin(GL_LINES)
         for i in range(5):
-            Coords(self.__size/8*(-2+i),-self.__size/8).apply()
-            Coords(self.__size/8*(-2+i),self.__size*3/8).apply()
+            Coords(self.__size/8*(-2+i), -self.__size/8).apply()
+            Coords(self.__size/8*(-2+i), self.__size*3/8).apply()
 
         for i in range(5):
-            Coords(-self.__size/4,self.__size/8 * (-1 + i)).apply()
-            Coords(self.__size/4,self.__size/8 * (-1 + i)).apply()
+            Coords(-self.__size/4, self.__size/8 * (-1 + i)).apply()
+            Coords(self.__size/4, self.__size/8 * (-1 + i)).apply()
         glEnd()
-
-
 
         glPopMatrix()
 
         for entry in self.__entries:
-            point = line_orientation(entry.getCoords().sum(self.__coords),self.__orientation,self.__size/4)
-            if entry.getValue()==True:
+            point = line_orientation(entry.getCoords().sum(
+                self.__coords), self.__orientation, self.__size/4)
+            if entry.getValue() == True:
                 COLOR_TRUE.apply()
-            elif entry.getValue()==False:
+            elif entry.getValue() == False:
                 COLOR_FALSE.apply()
             else:
                 COLOR_NONE.apply()
-            rect_polygon_around(point,self.__size/16)
+            rect_polygon_around(point, self.__size/16)
 
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        if(event_type == EVENT_TYPE_KEY_ASCII and coords.in_around(self.getCoords(), (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size/2), b=(self.__size/2 if self.__orientation % 2 == 0 else self.__size*3/8))):
+            return self.setEntry(key)
+
+        return False
 # Gate: Represents the main logic gates (or, and, xor, nor, nand) those must receives a pair of
 #      logic values and are able to output its interpretation.
+
 
 class Gate(Element):
     id: int = 0
@@ -470,6 +490,7 @@ class Gate(Element):
 
     def getEntries(self):
         return self.__entry
+
     def resetEntries(self):
         self.__entry = []
 
@@ -481,8 +502,10 @@ class Gate(Element):
 
     def getFill(self):
         return self.__fill
+
     def getOrientation(self):
         return self.__orientation
+
     def getSize(self):
         return self.__size
 
@@ -563,16 +586,21 @@ class Gate(Element):
     def gateOut(self) -> Entry:
         A = Entry(coords=self.__coords.sum(self.__out))
         return A
-    
+
     def setCenter(self):
         self.__coords.glTranslate()
-        glRotatef(90.0*self.__orientation,0.0,0.0,1.0)
+        glRotatef(90.0*self.__orientation, 0.0, 0.0, 1.0)
 
     def draw(self):
-        #self.getCoords().draw()
+        # self.getCoords().draw()
         for entry in self.__entry:
-            line_orientation(entry.getCoords().sum(self.getCoords()),(self.__orientation+2)%4,self.__size/2)
-        return line_orientation(self.getOutCoords().sum(self.getCoords()),self.__orientation,self.__size/5)
+            line_orientation(entry.getCoords().sum(
+                self.getCoords()), (self.__orientation+2) % 4, self.__size/2)
+        return line_orientation(self.getOutCoords().sum(self.getCoords()), self.__orientation, self.__size/5)
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        return False
+
 
 class NotGate(Gate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0)):
@@ -587,27 +615,31 @@ class NotGate(Gate):
 
         # Configures orientation
         if self.getOrientation() == ORIENTATION_LR:
-            self.setOutCoords(self.getCoords().sum(Coords(self.getSize()/2, 0)))
+            self.setOutCoords(self.getCoords().sum(
+                Coords(self.getSize()/2, 0)))
             self.getIn(0).setCoords(
                 self.getCoords().sum(Coords(-self.getSize()/2, 0)))
 
         if self.getOrientation() == ORIENTATION_RL:
-            self.setOutCoords(self.getCoords().sum(Coords(-self.getSize()/2, 0)))
+            self.setOutCoords(self.getCoords().sum(
+                Coords(-self.getSize()/2, 0)))
             self.getIn(0).setCoords(
                 self.getCoords().sum(Coords(self.getSize()/2, 0)))
 
         if self.getOrientation() == ORIENTATION_UD:
-            self.setOutCoords(self.getCoords().sum(Coords(0, self.getSize()/2)))
+            self.setOutCoords(self.getCoords().sum(
+                Coords(0, self.getSize()/2)))
             self.getIn(0).setCoords(
                 self.getCoords().sum(Coords(0, -self.getSize()/2)))
 
         if self.getOrientation() == ORIENTATION_DU:
-            self.setOutCoords(self.getCoords().sum(Coords(0, -self.getSize()/2)))
+            self.setOutCoords(self.getCoords().sum(
+                Coords(0, -self.getSize()/2)))
             self.getIn(0).setCoords(
                 self.getCoords().sum(Coords(0, self.getSize()/2)))
 
     def setRotation(self, sense=False):
-        super().setRotation(sense = sense)
+        super().setRotation(sense=sense)
         self.__updateCoords()
 
     def gateOut(self) -> Entry:
@@ -615,27 +647,27 @@ class NotGate(Gate):
 
     def draw(self):
         point = super().draw()
-        
+
         # set center
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         self.setCenter()
 
-        #Polygon
+        # Polygon
         self.getFill().apply()
         glBegin(GL_POLYGON)
-        Coords(self.getSize()*3/10,0.0).apply()
-        Coords(-self.getSize()*3/10,-self.getSize()/5).apply()
-        Coords(-self.getSize()*3/10,self.getSize()/5).apply()
+        Coords(self.getSize()*3/10, 0.0).apply()
+        Coords(-self.getSize()*3/10, -self.getSize()/5).apply()
+        Coords(-self.getSize()*3/10, self.getSize()/5).apply()
         glEnd()
 
-        #bord
-        #Polygon
+        # bord
+        # Polygon
         COLOR_STROKE.apply()
         glBegin(GL_LINE_LOOP)
-        Coords(self.getSize()*3/10,0.0).apply()
-        Coords(-self.getSize()*3/10,-self.getSize()/5).apply()
-        Coords(-self.getSize()*3/10,self.getSize()/5).apply()
+        Coords(self.getSize()*3/10, 0.0).apply()
+        Coords(-self.getSize()*3/10, -self.getSize()/5).apply()
+        Coords(-self.getSize()*3/10, self.getSize()/5).apply()
         glEnd()
 
         glPopMatrix()
@@ -643,6 +675,7 @@ class NotGate(Gate):
         point.draw()
 
         return self
+
 
 class AndGate(Gate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0)):
@@ -653,48 +686,49 @@ class AndGate(Gate):
 
     def draw(self):
         point = super().draw()
-        
+
         # set center
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         self.setCenter()
 
-        #Polygon
+        # Polygon
         self.getFill().apply()
         glBegin(GL_POLYGON)
-        Coords(self.getSize()*1/10,self.getSize()/5).apply()
-        Coords(self.getSize()*9/40,self.getSize()*3/20).apply()
-        Coords(self.getSize()*11/40,self.getSize()/10).apply()
-        Coords(self.getSize()*3/10,0).apply()
-        Coords(self.getSize()*11/40,-self.getSize()/10).apply()
-        Coords(self.getSize()*9/40,-self.getSize()*3/20).apply()
-        Coords(self.getSize()*1/10,-self.getSize()/5).apply()
+        Coords(self.getSize()*1/10, self.getSize()/5).apply()
+        Coords(self.getSize()*9/40, self.getSize()*3/20).apply()
+        Coords(self.getSize()*11/40, self.getSize()/10).apply()
+        Coords(self.getSize()*3/10, 0).apply()
+        Coords(self.getSize()*11/40, -self.getSize()/10).apply()
+        Coords(self.getSize()*9/40, -self.getSize()*3/20).apply()
+        Coords(self.getSize()*1/10, -self.getSize()/5).apply()
 
-        Coords(-self.getSize()*3/10,-self.getSize()/5).apply()
-        Coords(-self.getSize()*3/10,self.getSize()/5).apply()
-        
+        Coords(-self.getSize()*3/10, -self.getSize()/5).apply()
+        Coords(-self.getSize()*3/10, self.getSize()/5).apply()
+
         glEnd()
 
-        #bord
-        #Polygon
+        # bord
+        # Polygon
         COLOR_STROKE.apply()
         glBegin(GL_LINE_LOOP)
-        Coords(self.getSize()*1/10,self.getSize()/5).apply()
-        Coords(self.getSize()*9/40,self.getSize()*3/20).apply()
-        Coords(self.getSize()*11/40,self.getSize()/10).apply()
-        Coords(self.getSize()*3/10,0).apply()
-        Coords(self.getSize()*11/40,-self.getSize()/10).apply()
-        Coords(self.getSize()*9/40,-self.getSize()*3/20).apply()
-        Coords(self.getSize()*1/10,-self.getSize()/5).apply()
+        Coords(self.getSize()*1/10, self.getSize()/5).apply()
+        Coords(self.getSize()*9/40, self.getSize()*3/20).apply()
+        Coords(self.getSize()*11/40, self.getSize()/10).apply()
+        Coords(self.getSize()*3/10, 0).apply()
+        Coords(self.getSize()*11/40, -self.getSize()/10).apply()
+        Coords(self.getSize()*9/40, -self.getSize()*3/20).apply()
+        Coords(self.getSize()*1/10, -self.getSize()/5).apply()
 
-        Coords(-self.getSize()*3/10,-self.getSize()/5).apply()
-        Coords(-self.getSize()*3/10,self.getSize()/5).apply()
-        
+        Coords(-self.getSize()*3/10, -self.getSize()/5).apply()
+        Coords(-self.getSize()*3/10, self.getSize()/5).apply()
+
         glEnd()
 
         glPopMatrix()
 
         return point
+
 
 class NandGate(AndGate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0)):
@@ -709,63 +743,65 @@ class NandGate(AndGate):
         point.draw()
         return self
 
+
 class OrGate(Gate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0)):
         super().__init__(coords)
-        
+
     def gateOut(self) -> Entry:
         return super().gateOut().setValue(self.getIn(0).getValue() or self.getIn(1).getValue())
 
     def draw(self):
         point = super().draw()
-        
+
         # set center
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         self.setCenter()
 
-        #Polygon
+        # Polygon
         self.getFill().apply()
         glBegin(GL_POLYGON)
-        Coords(0,self.getSize()*0.19).apply()
-        Coords(self.getSize()*1/10,self.getSize()*3/20).apply()
-        Coords(self.getSize()*2/10,self.getSize()/10).apply()
-        Coords(self.getSize()*3/10,0).apply()
-        Coords(self.getSize()*2/10,-self.getSize()/10).apply()
-        Coords(self.getSize()*1/10,-self.getSize()*3/20).apply()
-        Coords(0,-self.getSize()*0.19).apply()
+        Coords(0, self.getSize()*0.19).apply()
+        Coords(self.getSize()*1/10, self.getSize()*3/20).apply()
+        Coords(self.getSize()*2/10, self.getSize()/10).apply()
+        Coords(self.getSize()*3/10, 0).apply()
+        Coords(self.getSize()*2/10, -self.getSize()/10).apply()
+        Coords(self.getSize()*1/10, -self.getSize()*3/20).apply()
+        Coords(0, -self.getSize()*0.19).apply()
 
-        Coords(-self.getSize()*0.3,-self.getSize()*0.2).apply()
-        Coords(-self.getSize()*0.22,-self.getSize()*0.1).apply()
-        Coords(-self.getSize()*0.2,0).apply()
-        Coords(-self.getSize()*0.22,+self.getSize()*0.1).apply()
-        Coords(-self.getSize()*0.3,+self.getSize()*0.2).apply()
-        
+        Coords(-self.getSize()*0.3, -self.getSize()*0.2).apply()
+        Coords(-self.getSize()*0.22, -self.getSize()*0.1).apply()
+        Coords(-self.getSize()*0.2, 0).apply()
+        Coords(-self.getSize()*0.22, +self.getSize()*0.1).apply()
+        Coords(-self.getSize()*0.3, +self.getSize()*0.2).apply()
+
         glEnd()
 
-        #bord
-        #Polygon
+        # bord
+        # Polygon
         COLOR_STROKE.apply()
         glBegin(GL_LINE_LOOP)
-        Coords(0,self.getSize()*0.19).apply()
-        Coords(self.getSize()*1/10,self.getSize()*3/20).apply()
-        Coords(self.getSize()*2/10,self.getSize()/10).apply()
-        Coords(self.getSize()*3/10,0).apply()
-        Coords(self.getSize()*2/10,-self.getSize()/10).apply()
-        Coords(self.getSize()*1/10,-self.getSize()*3/20).apply()
-        Coords(0,-self.getSize()*0.19).apply()
+        Coords(0, self.getSize()*0.19).apply()
+        Coords(self.getSize()*1/10, self.getSize()*3/20).apply()
+        Coords(self.getSize()*2/10, self.getSize()/10).apply()
+        Coords(self.getSize()*3/10, 0).apply()
+        Coords(self.getSize()*2/10, -self.getSize()/10).apply()
+        Coords(self.getSize()*1/10, -self.getSize()*3/20).apply()
+        Coords(0, -self.getSize()*0.19).apply()
 
-        Coords(-self.getSize()*0.3,-self.getSize()*0.2).apply()
-        Coords(-self.getSize()*0.22,-self.getSize()*0.1).apply()
-        Coords(-self.getSize()*0.2,0).apply()
-        Coords(-self.getSize()*0.22,+self.getSize()*0.1).apply()
-        Coords(-self.getSize()*0.3,+self.getSize()*0.2).apply()
-        
+        Coords(-self.getSize()*0.3, -self.getSize()*0.2).apply()
+        Coords(-self.getSize()*0.22, -self.getSize()*0.1).apply()
+        Coords(-self.getSize()*0.2, 0).apply()
+        Coords(-self.getSize()*0.22, +self.getSize()*0.1).apply()
+        Coords(-self.getSize()*0.3, +self.getSize()*0.2).apply()
+
         glEnd()
 
         glPopMatrix()
 
         return point
+
 
 class NorGate(OrGate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0)):
@@ -780,6 +816,7 @@ class NorGate(OrGate):
         point.draw()
         return self
 
+
 class XorGate(OrGate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0)):
         super().__init__(coords)
@@ -789,27 +826,28 @@ class XorGate(OrGate):
 
     def draw(self):
         point = super().draw()
-        
+
         # set center
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         self.setCenter()
 
-        #bord
+        # bord
         COLOR_STROKE.apply()
         glBegin(GL_LINE_STRIP)
 
-        Coords(-self.getSize()*0.37,-self.getSize()*0.2).apply()
-        Coords(-self.getSize()*0.29,-self.getSize()*0.1).apply()
-        Coords(-self.getSize()*0.27,0).apply()
-        Coords(-self.getSize()*0.29,+self.getSize()*0.1).apply()
-        Coords(-self.getSize()*0.37,+self.getSize()*0.2).apply()
-        
+        Coords(-self.getSize()*0.37, -self.getSize()*0.2).apply()
+        Coords(-self.getSize()*0.29, -self.getSize()*0.1).apply()
+        Coords(-self.getSize()*0.27, 0).apply()
+        Coords(-self.getSize()*0.29, +self.getSize()*0.1).apply()
+        Coords(-self.getSize()*0.37, +self.getSize()*0.2).apply()
+
         glEnd()
 
         glPopMatrix()
 
         return point
+
 
 class XnorGate(XorGate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0)):
@@ -902,6 +940,9 @@ class Wire(Element):
 
     def draw(self):
         return self
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        return False
 
 
 """FUNCTIONS
