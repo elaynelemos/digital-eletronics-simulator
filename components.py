@@ -93,6 +93,10 @@ class Entry(Element):
         self.__orientation = 0 if self.__orientation > 3 else self.__orientation
         self.__orientation = 3 if self.__orientation < 0 else self.__orientation
 
+    def setTranslation(self, coords=Coords):
+        self.setCoords(coords)
+        return self
+
     def draw(self):
         # line
         c = line_orientation(
@@ -134,12 +138,15 @@ class Entry(Element):
         return self
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        c = line_orientation(
-            self.getCoords(), self.__orientation, a=self.__size*3/4)
-        if(event_type == EVENT_TYPE_MOUSE and state == GLUT_UP and coords.in_around(c, self.__size/4)):
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP and self.isInside(coords):
             self.toogleV()
             return True
         return False
+
+    def isInside(self, coords) -> bool:
+        c = line_orientation(
+            self.getCoords(), self.__orientation, a=self.__size*3/4)
+        return coords.in_around(c, self.__size/4)
 
 
 class Checker(Element):
@@ -162,7 +169,7 @@ class Checker(Element):
 
     def setValue(self, value: bool) -> bool:  # returns True if succeeds.
         try:
-            if not(isinstance(value, bool)):
+            if not(isinstance(value, bool)) and value != None:
                 raise ValueError(
                     "ValueError: Logic value expected to entry. You entered a(n): ", type(value))
         except ValueError as ve:
@@ -184,6 +191,10 @@ class Checker(Element):
         self.__orientation = self.__orientation + (1 if sense else -1)
         self.__orientation = 0 if self.__orientation > 3 else self.__orientation
         self.__orientation = 3 if self.__orientation < 0 else self.__orientation
+
+    def setTranslation(self, coords=Coords):
+        self.setCoords(coords)
+        return self
 
     def draw(self):
 
@@ -223,8 +234,13 @@ class Checker(Element):
         return self
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-
+        
         return False
+
+    def isInside(self, coords) -> bool:
+        c = line_orientation(
+            self.getCoords(), self.__orientation, a=self.__size*2/3)
+        return coords.in_around(c, self.__size/3)
 
 
 class Display(Element):
@@ -247,11 +263,11 @@ class Display(Element):
             self.__checks[i] = Checker()
             # definindo a rotação do componente
             if self.__orientation % 2 == 0:  # LR or RL
-                self.__checks[i].setCoords(c.sum(Coords(self.__size*1/2, -self.__size*3/8 + i*self.__size*1/4)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/2, -self.__size*3/8 + i*self.__size*1/4)))
+                self.__checks[i].setCoords(c.sum(Coords(self.__size*5/8, -self.__size*3/8 + i*self.__size*1/4)) if int(
+                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*5/8, -self.__size*3/8 + i*self.__size*1/4)))
             else:                       # UD or DU
-                self.__checks[i].setCoords(c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, self.__size*1/2)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, -self.__size*1/2)))
+                self.__checks[i].setCoords(c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, self.__size*5/8)) if int(
+                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, -self.__size*5/8)))
 
     def getCheck(self, i: int):
         if(i < 4 and i >= 0):
@@ -274,12 +290,22 @@ class Display(Element):
         else:
             return True
 
+    def getCoords(self) -> Coords:
+        return self.__coords
+
     def setRotation(self, sense=False):
         self.__orientation = self.__orientation + (1 if sense else -1)
         self.__orientation = 0 if self.__orientation > 3 else self.__orientation
         self.__orientation = 3 if self.__orientation < 0 else self.__orientation
 
         self.__updateCoords()
+
+    def setTranslation(self, coords=Coords):
+        c = line_orientation(self.getCoords(),self.__orientation,a=self.__size*5/8)
+        c = line_orientation(c,(self.__orientation+1)%4,a=self.__size*3/8)
+        #c = c.mul(-1)   
+        self.setCoords(coords.sum(c))
+        return self
 
     def draw(self):
         v = 0
@@ -309,13 +335,26 @@ class Display(Element):
         glPushMatrix()
         self.__coords.glTranslate()
 
-        for i in self.__checks:
-            line_orientation(i.getCoords(), self.__orientation, l=True)
+        for ckeck in self.__checks:
+            point = line_orientation(
+                ckeck.getCoords(), self.__orientation, l=True)
+            if ckeck.getValue() == True:
+                COLOR_TRUE.apply()
+            elif ckeck.getValue() == False:
+                COLOR_FALSE.apply()
+            else:
+                COLOR_NONE.apply()
+            rect_polygon_around(point, self.__size/16)
+
         glPopMatrix()
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        #if(event_type==EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
+         #   print("Clicou dentro")
         return False
 
+    def isInside(self, coords) -> bool:
+        return coords.in_around(self.getCoords(), (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size/2), b=(self.__size/2 if self.__orientation % 2 == 0 else self.__size*3/8))
 
 class KeyBoard(Element):
     __entries: List[Entry] = []
@@ -391,6 +430,13 @@ class KeyBoard(Element):
 
         self.__updateCoords()
 
+    def setTranslation(self, coords=Coords):
+        c = line_orientation(self.getCoords(),self.__orientation,a=self.__size*5/8)
+        c = line_orientation(c,(self.__orientation+3)%4,a=self.__size*3/8)
+        #c = c.mul(-1)
+        self.setCoords(coords.sum(c))
+        return self
+
     def draw(self):
         v = 0
         for i in range(4):
@@ -451,10 +497,15 @@ class KeyBoard(Element):
             rect_polygon_around(point, self.__size/16)
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        if(event_type == EVENT_TYPE_KEY_ASCII and coords.in_around(self.getCoords(), (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size/2), b=(self.__size/2 if self.__orientation % 2 == 0 else self.__size*3/8))):
+        if(event_type==EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
+            print("Clicou dentro")
+        if event_type == EVENT_TYPE_KEY_ASCII and self.isInside(coords):
             return self.setEntry(key)
 
         return False
+
+    def isInside(self, coords) -> bool:
+        return coords.in_around(self.getCoords(), (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size/2), b=(self.__size/2 if self.__orientation % 2 == 0 else self.__size*3/8))
 # Gate: Represents the main logic gates (or, and, xor, nor, nand) those must receives a pair of
 #      logic values and are able to output its interpretation.
 
@@ -533,6 +584,12 @@ class Gate(Element):
         self.__orientation = 0 if self.__orientation > 3 else self.__orientation
         self.__orientation = 3 if self.__orientation < 0 else self.__orientation
         self.__updateCoords()
+
+    def setTranslation(self, coords=Coords):
+        c = line_orientation(self.getCoords(),(self.__orientation+2)%4,a=self.__size/2)
+        c = c.mul(-1)
+        self.setCoords(coords.sum(c))
+        return self
 
     def __updateCoords(self) -> Gate:
         self.__entry = []
@@ -671,9 +728,12 @@ class NotGate(Gate):
 
         glPopMatrix()
 
-        point.draw()
+        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
 
         return self
+
+    def isInside(self, coords) -> bool:
+        return False
 
 
 class AndGate(Gate):
@@ -728,6 +788,9 @@ class AndGate(Gate):
 
         return point
 
+    def isInside(self, coords) -> bool:
+        return False
+
 
 class NandGate(AndGate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0)):
@@ -739,8 +802,11 @@ class NandGate(AndGate):
 
     def draw(self):
         point = super().draw()
-        point.draw()
+        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
+
+    def isInside(self, coords) -> bool:
+        return False
 
 
 class OrGate(Gate):
@@ -801,6 +867,9 @@ class OrGate(Gate):
 
         return point
 
+    def isInside(self, coords) -> bool:
+        return False
+
 
 class NorGate(OrGate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0)):
@@ -812,8 +881,11 @@ class NorGate(OrGate):
 
     def draw(self):
         point = super().draw()
-        point.draw()
+        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
+
+    def isInside(self, coords) -> bool:
+        return False
 
 
 class XorGate(OrGate):
@@ -847,6 +919,9 @@ class XorGate(OrGate):
 
         return point
 
+    def isInside(self, coords) -> bool:
+        return False
+
 
 class XnorGate(XorGate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0)):
@@ -857,12 +932,16 @@ class XnorGate(XorGate):
 
     def draw(self):
         point = super().draw()
-        point.draw()
+        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
 
+    def isInside(self, coords) -> bool:
+        return False
 
 # Wire: Represents the connector of the logic circuit. It's defined as a list of unique
 #      Coords. Once connected to an logic component carries its value from start to end points.
+
+
 class Wire(Element):
     fill: Color = Color(g=64.0/255)
     # the attributes (private) only can be reached by getters and setters.

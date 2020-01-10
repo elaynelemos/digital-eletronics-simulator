@@ -1,4 +1,5 @@
 from components import Element, Coords
+from util import *
 
 from OpenGL.GL import *
 from OpenGL.GLUT import *
@@ -38,12 +39,34 @@ class Window(Element):
             return self.elements[index]
 
     def draw(self):
+        for i in range(20):
+            for j in range(20):
+                self.center.sum(Coords(i*POINT_SPACE, j*POINT_SPACE)
+                                ).draw(radius=0.5, color=Color(r=0.5, g=0.5, b=0.5))
+        for i in range(20):
+            for j in range(1, 20):
+                self.center.sum(Coords(i*POINT_SPACE, -j*POINT_SPACE)
+                                ).draw(radius=0.5, color=Color(r=0.5, g=0.5, b=0.5))
+        for i in range(1, 20):
+            for j in range(20):
+                self.center.sum(Coords(-i*POINT_SPACE, j*POINT_SPACE)
+                                ).draw(radius=0.5, color=Color(r=0.5, g=0.5, b=0.5))
+        for i in range(1, 20):
+            for j in range(1, 20):
+                self.center.sum(Coords(-i*POINT_SPACE, -j*POINT_SPACE)
+                                ).draw(radius=0.5, color=Color(r=0.5, g=0.5, b=0.5))
+        self.center.draw(radius=1.0)
+
         for i in self.elements:
             i.draw()
         return self
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+
         for i in range(len(self.elements)):
             if self.elements[len(self.elements)-i-1].event(event_type, key=key, button=button, state=state, coords=coords):
                 return True
+        return False
+
+    def isInside(self, coords) -> bool:
         return False

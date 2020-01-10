@@ -132,22 +132,22 @@ class Element(ABC):
         return self
 
     @abstractmethod
+    def isInside(self, coords) -> bool:
+        return False
+
+    @abstractmethod
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
 
         return False
 
     def __str__(self):
-        return "Name="+self.getName()
+        return "[Name: "+self.getName()+"]"+str(type(self))
 
 
 # Coords: It's the "data type" of a point on the screen.
 class Coords(Element):
     # the attributes (private) only can be reached by getters and setters. Initiate coords with
     # invalid number for screen to be treated if there's any error in insertion.
-    radius: float = POINT_SPACE/3
-    fill:   Color = Color(r=1.0, g=1.0, b=1.0)
-    stroke: Color = Color()  # black
-    n_sides: int = 15
     __x: float = None
     __y: float = None
 
@@ -204,24 +204,28 @@ class Coords(Element):
         glVertex3f(self.getX(), self.getY(), 0.0)
         return self
 
-    def draw(self):
-        Coords.fill.apply()
+    def draw(self, color=Color(), n_sides=15, stroke=None, radius=POINT_SPACE/3):
+        color.apply()
         glBegin(GL_POLYGON)
-        for i in range(Coords.n_sides):
-            glVertex3f(self.getX()+Coords.radius*math.sin(i*math.pi*2/Coords.n_sides),
-                       self.getY()+Coords.radius*math.cos(i*math.pi*2/Coords.n_sides), 0)
+        for i in range(n_sides):
+            glVertex3f(self.getX()+radius*math.sin(i*math.pi*2/n_sides),
+                       self.getY()+radius*math.cos(i*math.pi*2/n_sides), 0)
         glEnd()
 
-        COLOR_STROKE.apply()
-        glLineWidth(STROKE_WIDTH)
-        glBegin(GL_LINE_LOOP)
-        for i in range(Coords.n_sides):
-            glVertex3f(self.getX()+Coords.radius*math.sin(i*math.pi*2/Coords.n_sides),
-                       self.getY()+Coords.radius*math.cos(i*math.pi*2/Coords.n_sides), 0)
-        glEnd()
-        return self
+        if(stroke != None):
+            stroke.apply()
+            glLineWidth(STROKE_WIDTH)
+            glBegin(GL_LINE_LOOP)
+            for i in range(n_sides):
+                glVertex3f(self.getX()+radius*math.sin(i*math.pi*2/n_sides),
+                           self.getY()+radius*math.cos(i*math.pi*2/n_sides), 0)
+            glEnd()
+            return self
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        return False
+
+    def isInside(self, coords) -> bool:
         return False
 
     def in_around(self, coord, a: int, b: int = None):

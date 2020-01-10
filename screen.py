@@ -15,40 +15,38 @@ def init():
     glClearColor(.9, 0.8, .6, 1.0)
 
     window.elements.append(Display())
-    window.elements[0].getCheck(0).setValue(False)
+    window.elements[0].setRotation()
+    window.elements[0].setTranslation(Coords(-50, -50))
+
+    window.elements[0].setCheck(0, True)
     window.elements[0].getCheck(1).setValue(False)
     window.elements[0].getCheck(2).setValue(False)
     window.elements[0].getCheck(3).setValue(False)
-    window.elements[0].setRotation()
-
-    window.elements[0].setCoords(Coords(-50, -50))
-
-    window.elements[0].setRotation()
-    window.elements[0].setRotation()
 
     window.elements.append(NotGate())
+    window.elements[1].setRotation(sense=True)
+    window.elements[1].setTranslation(Coords(50, -50))
 
     window.elements.append(Entry())
     window.elements[2].setValue(True)
-    window.elements[2].setCoords(Coords(-20, -20))
+    window.elements[2].setTranslation(Coords(-20, -20))
 
     window.elements.append(Entry())
     window.elements[3].setValue(False)
     window.elements[3].setRotation()
-    window.elements[3].setCoords(Coords(-20, 20))
+    window.elements[3].setTranslation(Coords(-20, 20))
 
     window.elements.append(Checker())
     window.elements[4].setValue(True)
-    window.elements[4].setCoords(Coords(20, -20))
+    window.elements[4].setTranslation(Coords(20, -20))
 
     window.elements.append(Checker())
     window.elements[5].setValue(False)
     window.elements[5].setRotation(sense=True)
-    window.elements[5].setCoords(Coords(20, 20))
+    window.elements[5].setTranslation(Coords(20, 20))
 
     window.elements.append(KeyBoard())
-    window.elements[6].setRotation()
-    window.elements[6].setCoords(Coords(-50, 50))
+    window.elements[6].setTranslation(Coords(-50, 50))
 
     # Insert Code to inicialization
 
@@ -56,8 +54,6 @@ def init():
 def showScreen():
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-    window.elements[1].setCoords(Coords(50, -50))
 
     window.draw()
 
