@@ -4,6 +4,7 @@
 *   Orientador: Prof. Dr. Jorge Cavalcanti
 *   Discentes: Elayne Lemos, elayne.l.lemos@gmail.com
 *              Jônatas de Castro, jonatascastropassos@gmail.com
+               Ezequias Antunes, ezequiasantunes18@gmail.com
 *   Atividade: pt-br/ este código parametriza os elementos entrada (Entry), porta (Gate) e conector (Wire) 
 *                     do simulador de eletrônica digital enquanto define a manipulação básica.
 *              en-us/ this code parametrize the elements Entry, Gate and Wire of the digital eletronics
