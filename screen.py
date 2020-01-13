@@ -3,7 +3,7 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 
 from components import Entry, Checker, Display, NotGate, AndGate, NandGate, OrGate, NorGate, XorGate, XnorGate, KeyBoard
-from elements import Window,WindowsBar, WindowGlobal, IconZoomMore, IconPrevious, IconStart, IconStop, IconZoomLess, IconNext, IconMoreAba,PainelComponents
+from elements import Window, WindowsBar, WindowGlobal, IconZoomMore, IconPrevious, IconStart, IconStop, IconZoomLess, IconNext, IconMoreAba, PainelComponents
 from util import Coords, alfa_num_around, EVENT_TYPE_MOUSE, EVENT_TYPE_KEY_ASCII
 
 
@@ -14,9 +14,9 @@ screen = {}
 
 def init():
     glClearColor(228/255, 233/255, 237/255, 1.0)
-    
+
     #glClearColor(.9, 0.8, .6, 1.0)
-    
+
     window.elements.append(Display())
     window.elements[0].setRotation()
     window.elements[0].setTranslation(Coords(-50, -50))
@@ -50,15 +50,14 @@ def init():
 
     window.elements.append(KeyBoard())
     window.elements[6].setTranslation(Coords(-50, 50))
-    
 
-    windowGlobal.tools.append(IconNext(Coords(0,0)))
-    windowGlobal.tools.append(IconPrevious(Coords(0,0)))
-    windowGlobal.tools.append(IconZoomMore(Coords(0,0)))
-    windowGlobal.tools.append(IconZoomLess(Coords(0,0)))
-    windowGlobal.tools.append(IconStop(Coords(0,0)))
-    windowGlobal.tools.append(IconStart(Coords(0,0)))
-    windowGlobal.tools.append(IconMoreAba(Coords(0,0)))
+    windowGlobal.tools.append(IconNext(Coords(0, 0)))
+    windowGlobal.tools.append(IconPrevious(Coords(0, 0)))
+    windowGlobal.tools.append(IconZoomMore(Coords(0, 0)))
+    windowGlobal.tools.append(IconZoomLess(Coords(0, 0)))
+    windowGlobal.tools.append(IconStop(Coords(0, 0)))
+    windowGlobal.tools.append(IconStart(Coords(0, 0)))
+    windowGlobal.tools.append(IconMoreAba(Coords(0, 0)))
     windowGlobal.configurePositionTools()
     # Insert Code to inicialization
 
@@ -67,7 +66,7 @@ def showScreen():
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    #window.draw()
+    # window.draw()
     windowGlobal.draw()
     glFlush()
 
@@ -104,12 +103,22 @@ def keyboard_special(key, x, y):
 
 def mouse(button, state, x, y):
     # Assign functions to keys of mouse
+<<<<<<< HEAD
     #if state == GLUT_UP:
     windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y))
     showScreen()
     #if window.event(EVENT_TYPE_MOUSE, coords=convert(x, y), button=button, state=state):
         #showScreen()
     #return None
+=======
+    if state == GLUT_UP:
+        windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button,
+                           state=state, coords=convert(x, y))
+        showScreen()
+    if window.event(EVENT_TYPE_MOUSE, coords=convert(x, y), button=button, state=state):
+        showScreen()
+    # return None
+>>>>>>> af85d6234cd0125ac478f8b5aa21652cbd6a4da4
 
 
 def windowResizeHandler(width, height):
@@ -120,7 +129,7 @@ def windowResizeHandler(width, height):
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluOrtho2D(-width/5, width/5, height/5, -height/5)
-    windowGlobal.setSizeWindowGlobal(Coords(width/5.0,height/5.0))
+    windowGlobal.setSizeWindowGlobal(Coords(width/5.0, height/5.0))
     windowGlobal.configurePositionTools()
     windowGlobal.configureWorkSetPosition()
     showScreen()
@@ -131,6 +140,7 @@ glutInit()
 glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
 glutInitWindowPosition(0, 0)
 glutInitWindowSize(500, 500)
+glutInitWindowPosition(2000, 0)
 
 wind = glutCreateWindow("Hello World")
 glutDisplayFunc(showScreen)
