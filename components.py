@@ -33,13 +33,8 @@ RELATIVE_GATEOUT_Y = 0
 N_ENTRIES = 2
 
 
-"""COMPONENT CLASSES > look at Coords, stopped there
-"""
-
 # Entry: Represents a logic entry. It has a value itself.
 #       Then cannot be connected to other entries (only outputs its own value).
-
-
 class Entry(Element):
     # the attributes (private) only can be reached by getters and setters.
     __value: bool = None
@@ -523,10 +518,9 @@ class KeyBoard(Element):
 
     def isInside(self, coords) -> bool:
         return coords.in_around(self.getCoords(), (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size/2), b=(self.__size/2 if self.__orientation % 2 == 0 else self.__size*3/8))
+
 # Gate: Represents the main logic gates (or, and, xor, nor, nand) those must receives a pair of
 #      logic values and are able to output its interpretation.
-
-
 class Gate(Element):
     id: int = 0
     # the attributes (private) only can be reached by getters and setters.
@@ -975,8 +969,6 @@ class XnorGate(XorGate):
 
 # Wire: Represents the connector of the logic circuit. It's defined as a list of unique
 #      Coords. Once connected to an logic component carries its value from start to end points.
-
-
 class Wire(Element):
     fill: Color = Color(g=64.0/255)
     # the attributes (private) only can be reached by getters and setters.
@@ -1027,6 +1019,13 @@ class Wire(Element):
         else:
             return self.__points[0]
 
+    def getWirePreEndP(self) -> Coords:
+        l = len(self.__points)
+        if l > 1:
+            return self.__points[l-2]
+        else:
+            return self.__points[0]
+
     def getWireNextP(self, reference: Coords) -> Coords:
         for i in self.__points:
             if i.getX() == reference.getX() and i.getY() == reference.getY():
@@ -1058,25 +1057,20 @@ class Wire(Element):
         return False
 
 
-"""FUNCTIONS
-"""
 # Each is[Component](): verifies the respective data type of a component. Returns True if its correct.
-
-
 def isEntry(component) -> bool:
     return isinstance(component, Entry)
 
+def isChecker(component) -> bool:
+    return isinstance(component, Checker)
 
 def isGate(component) -> bool:
     return isinstance(component, Gate)
-
 
 def isWire(component) -> bool:
     return isinstance(component, Wire)
 
 # isEqualPoints(): receives two pairs of Coords and returns True if they have the same x and y.
-
-
 def isEqualPoints(c1: Coords, c2: Coords) -> bool:
     if c1.getX() == c2.getX() and c1.getY() == c2.getY():
         return True
@@ -1085,8 +1079,6 @@ def isEqualPoints(c1: Coords, c2: Coords) -> bool:
 # wiredComponent(): receives an Wire and other component then verifies if the component is connected
 #                  to the Wire begin or end (True if positive). Entry can only be connected to the
 #                  Wire start point.
-
-
 def wiredComponent(w: Wire, component) -> bool:
     if isGate(component) and (isEqualPoints(w.getWireStartP(), component.getCoords()) or isEqualPoints(w.getWireEndP(), component.getCoords())):
         return True
@@ -1097,8 +1089,6 @@ def wiredComponent(w: Wire, component) -> bool:
 
 # connectedComponents(): to be connected the components c1 and c2 must be wired one at start and
 #                       other to end of the Wire component.
-
-
 def connectedComponents(w: Wire, c1, c2) -> bool:
     return (wiredComponent(w, c1) and wiredComponent(w, c2) and
             not(isEqualPoints(c1.getCoords(), c2.getCoords())))
@@ -1116,27 +1106,4 @@ print(e.getWireEndP().getY())
 e.insertWireP([Coords(50,70)])
 
 print(e.getWireEndP().getY())
-"""
-
-"""
-    #basic test ahead
-    e1 = Entry(False, Coords(10,20))
-    e2 = Entry(False, Coords(10,30))
-    w = Wire((Coords(10,20),Coords(50,20),Coords(10,20),Coords(90,40)))
-    g = Gate(1, e1.getValue(), e2.getValue(), Coords(20,40))
-
-    print(connectedComponents(w,e1,g))
-"""
-
-"""    def refactorWire(self) -> None: #reduce the number of points if they are at the same line.
-        l = len(self.__coords)-3
-        print(l)
-        for i in range(l):
-            if self.__coords[i].getX()==self.__coords[i+1].getX() and self.__coords[i].getX()==self.__coords[i+2].getX():
-                self.__coords.pop(i+1)
-                print(len(self.__coords))
-        for i in range(l):
-            if self.__coords[i].getY()==self.__coords[i+1].getY() and self.__coords[i].getY()==self.__coords[i+2].getY():
-                self.__coords.pop(i+1)
-                
 """
