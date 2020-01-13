@@ -383,7 +383,6 @@ def alfa_num_around(c: Coords, a: float, d, p: bool = False, sc: bool = False, b
 
 def rect_top_bottom(c: Coords, x1: Coords, x2: Coords) -> int:
     x0 = None
-    
 
     if x1.getX() < x2.getX():
         x0 = x1
@@ -396,10 +395,10 @@ def rect_top_bottom(c: Coords, x1: Coords, x2: Coords) -> int:
             return 1
         elif c.getY() < x0.getY() and c.getY() < x1.getY():
             return -1
-        else :
+        else:
             return 0
-    y = ((c.getX()-x0.getX())*(x1.getY()-x0.getY()) / \
-        (x1.getX()-x0.getX())) + x0.getY()
+    y = ((c.getX()-x0.getX())*(x1.getY()-x0.getY()) /
+         (x1.getX()-x0.getX())) + x0.getY()
     return 1 if c.getY() > y else (-1 if c.getY() < y else 0)
 
 

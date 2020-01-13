@@ -4,6 +4,7 @@
 *   Orientador: Prof. Dr. Jorge Cavalcanti
 *   Discentes: Elayne Lemos, elayne.l.lemos@gmail.com
 *              Jônatas de Castro, jonatascastropassos@gmail.com
+               Ezequias Antunes, ezequiasantunes18@gmail.com
 *   Atividade: pt-br/ este código parametriza os elementos entrada (Entry), porta (Gate) e conector (Wire) 
 *                     do simulador de eletrônica digital enquanto define a manipulação básica.
 *              en-us/ this code parametrize the elements Entry, Gate and Wire of the digital eletronics
@@ -47,8 +48,9 @@ class Entry(Element):
     __size = POINT_SPACE*4
 
     # the constructor of Entry receives a logic value and the Coords where the entry should be placed.
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4):
         super().__init__()
+        self.__size = size
         self.setCoords(coords)
 
     def getValue(self) -> bool:
@@ -168,8 +170,9 @@ class Checker(Element):
     __size = POINT_SPACE*3
 
     # the constructor of Entry receives a logic value and the Coords where the entry should be placed.
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*3):
         super().__init__()
+        self.__size = size
         self.setCoords(coords)
 
     def getValue(self) -> bool:
@@ -263,9 +266,9 @@ class Display(Element):
     __orientation = ORIENTATION_RL
     __size = POINT_SPACE*4
 
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4):
         self.setCoords(coords)
-        c = Coords(0.0, 0.0)
+        self.__size = size
         self.__updateCoords()
 
     def __updateCoords(self):
@@ -378,9 +381,9 @@ class KeyBoard(Element):
     __orientation = ORIENTATION_LR
     __size = POINT_SPACE*4
 
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4):
         self.setCoords(coords)
-        c = Coords(0.0, 0.0)
+        self.__size = size
         self.__updateCoords()
 
     def __updateCoords(self):
@@ -537,9 +540,10 @@ class Gate(Element):
 
     # the constructor of Gate receives the gate type, two logic values and the Coords where it
     # should be placed.
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*5):
         self.setCoords(coords)  # position of the gate
         self.setName("G" + str(Gate.id))
+        self.__size = size
         self.__updateCoords()
 
     def getIn(self, i: int) -> Entry:
@@ -695,8 +699,8 @@ class Gate(Element):
 
 
 class NotGate(Gate):
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
-        super().__init__(coords)
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*5):
+        super().__init__(coords, size=size)
         self.__updateCoords()
 
     def __updateCoords(self) -> Gate:
@@ -771,16 +775,14 @@ class NotGate(Gate):
 
     def isInside(self, coords) -> bool:
         return is_inside_triangle(coords, [Coords(self.getSize()*3/10, 0.0), Coords(-self.getSize()*3/10, -self.getSize()/5), Coords(-self.getSize()*3/10, self.getSize()/5)])
+
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        if(event_type==EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
-           print("Clicou dentro")
+        if(event_type == EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
+            print("Clicou dentro")
         return False
 
 
 class AndGate(Gate):
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
-        super().__init__(coords)
-
     def gateOut(self) -> Entry:
         return super().gateOut().setValue(self.getIn(0).getValue() and self.getIn(1).getValue())
 
@@ -834,9 +836,6 @@ class AndGate(Gate):
 
 
 class NandGate(AndGate):
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
-        super().__init__(coords)
-
     def gateOut(self) -> Entry:
         return super().gateOut().setValue(not(self.getIn(0).getValue()
                                               and self.getIn(1).getValue()))
@@ -852,8 +851,6 @@ class NandGate(AndGate):
 
 
 class OrGate(Gate):
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
-        super().__init__(coords)
 
     def gateOut(self) -> Entry:
         return super().gateOut().setValue(self.getIn(0).getValue() or self.getIn(1).getValue())
@@ -914,8 +911,6 @@ class OrGate(Gate):
 
 
 class NorGate(OrGate):
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
-        super().__init__(coords)
 
     def gateOut(self) -> Entry:
         return super().gateOut().setValue(not(self.getIn(0).getValue()
@@ -932,8 +927,6 @@ class NorGate(OrGate):
 
 
 class XorGate(OrGate):
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
-        super().__init__(coords)
 
     def gateOut(self) -> Entry:
         return super().gateOut().setValue(self.getIn(0).getValue() != self.getIn(1).getValue())
@@ -967,8 +960,6 @@ class XorGate(OrGate):
 
 
 class XnorGate(XorGate):
-    def __init__(self, coords: Coords = Coords(0.0, 0.0)):
-        super().__init__(coords)
 
     def gateOut(self) -> Entry:
         return super().gateOut().setValue(self.getIn(0).getValue() == self.getIn(1).getValue())
