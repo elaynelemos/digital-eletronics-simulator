@@ -97,12 +97,18 @@ class Entry(Element):
         self.setCoords(coords)
         return self
 
+    def __getC(self):
+        return line_orientation(
+            self.getCoords(), self.__orientation, a=self.__size*3/4)
+
+    def __getD(self):
+        return line_orientation(
+            self.getCoords(), self.__orientation, a=self.__size*1/4, l=True)
+
     def draw(self):
         # line
-        c = line_orientation(
-            self.getCoords(), self.__orientation, a=self.__size*3/4)
-        d = line_orientation(
-            self.getCoords(), self.__orientation, a=self.__size*1/4, l=True)
+        c = self.__getC()
+        d = self.__getD()
 
         # Polygon
         if self.__value == True:
@@ -144,9 +150,14 @@ class Entry(Element):
         return False
 
     def isInside(self, coords) -> bool:
-        c = line_orientation(
-            self.getCoords(), self.__orientation, a=self.__size*3/4)
-        return coords.in_around(c, self.__size/4)
+        c = self.__getC()
+        d = self.__getD()
+        m = c.middle(d)
+        m1 = line_orientation(m, (self.__orientation+1) %
+                              4, a=self.__size/4, l=False)
+        m2 = line_orientation(m, (self.__orientation+3) %
+                              4, a=self.__size/4, l=False)
+        return coords.in_around(c, self.__size/4) or is_inside_triangle(coords, [d, m1, m2])
 
 
 class Checker(Element):
@@ -234,7 +245,7 @@ class Checker(Element):
         return self
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        
+
         return False
 
     def isInside(self, coords) -> bool:
@@ -301,9 +312,10 @@ class Display(Element):
         self.__updateCoords()
 
     def setTranslation(self, coords=Coords):
-        c = line_orientation(self.getCoords(),self.__orientation,a=self.__size*5/8)
-        c = line_orientation(c,(self.__orientation+1)%4,a=self.__size*3/8)
-        #c = c.mul(-1)   
+        c = line_orientation(
+            self.getCoords(), self.__orientation, a=self.__size*5/8)
+        c = line_orientation(c, (self.__orientation+1) % 4, a=self.__size*3/8)
+        #c = c.mul(-1)
         self.setCoords(coords.sum(c))
         return self
 
@@ -349,12 +361,13 @@ class Display(Element):
         glPopMatrix()
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        #if(event_type==EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
+        # if(event_type==EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
          #   print("Clicou dentro")
         return False
 
     def isInside(self, coords) -> bool:
         return coords.in_around(self.getCoords(), (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size/2), b=(self.__size/2 if self.__orientation % 2 == 0 else self.__size*3/8))
+
 
 class KeyBoard(Element):
     __entries: List[Entry] = []
@@ -431,8 +444,9 @@ class KeyBoard(Element):
         self.__updateCoords()
 
     def setTranslation(self, coords=Coords):
-        c = line_orientation(self.getCoords(),self.__orientation,a=self.__size*5/8)
-        c = line_orientation(c,(self.__orientation+3)%4,a=self.__size*3/8)
+        c = line_orientation(
+            self.getCoords(), self.__orientation, a=self.__size*5/8)
+        c = line_orientation(c, (self.__orientation+3) % 4, a=self.__size*3/8)
         #c = c.mul(-1)
         self.setCoords(coords.sum(c))
         return self
@@ -497,7 +511,7 @@ class KeyBoard(Element):
             rect_polygon_around(point, self.__size/16)
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        if(event_type==EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
+        if(event_type == EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
             print("Clicou dentro")
         if event_type == EVENT_TYPE_KEY_ASCII and self.isInside(coords):
             return self.setEntry(key)
@@ -585,8 +599,9 @@ class Gate(Element):
         self.__orientation = 3 if self.__orientation < 0 else self.__orientation
         self.__updateCoords()
 
-    def setTranslation(self, coords=Coords):
-        c = line_orientation(self.getCoords(),(self.__orientation+2)%4,a=self.__size/2)
+    def setTranslation(self, coords: Coords):
+        c = line_orientation(
+            self.getCoords(), (self.__orientation+2) % 4, a=self.__size/2)
         c = c.mul(-1)
         self.setCoords(coords.sum(c))
         return self
@@ -647,12 +662,33 @@ class Gate(Element):
         self.__coords.glTranslate()
         glRotatef(90.0*self.__orientation, 0.0, 0.0, 1.0)
 
+    def normalize(self, coords: Coords) -> Coords:
+        coords = coords.sum(self.getCoords().mul(-1))
+        if self.__orientation == 1:
+            temp = coords.getY()
+            coords.setY(coords.getX())
+            coords.setX(-temp)
+        if self.__orientation == 2:
+            coords.setX(-coords.getX())
+            coords.setY(-coords.getY())
+        if self.__orientation == 3:
+            temp = coords.getY()
+            coords.setY(-coords.getX())
+            coords.setX(temp)
+        return coords
+
+    def getD(self):
+        return line_orientation(self.getOutCoords().sum(self.getCoords()), self.__orientation, self.__size/5, l=False)
+
     def draw(self):
         # self.getCoords().draw()
         for entry in self.__entry:
             line_orientation(entry.getCoords().sum(
                 self.getCoords()), (self.__orientation+2) % 4, self.__size/2)
-        return line_orientation(self.getOutCoords().sum(self.getCoords()), self.__orientation, self.__size/5)
+        line_orientation(self.getOutCoords().sum(
+            self.getCoords()), self.__orientation, self.__size/5)
+
+        return self
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         return False
@@ -702,7 +738,8 @@ class NotGate(Gate):
         return super().gateOut().setValue(not self.getIn(0).getValue())
 
     def draw(self):
-        point = super().draw()
+        super().draw()
+        point = self.getD()
 
         # set center
         glMatrixMode(GL_MODELVIEW)
@@ -733,6 +770,10 @@ class NotGate(Gate):
         return self
 
     def isInside(self, coords) -> bool:
+        return is_inside_triangle(coords, [Coords(self.getSize()*3/10, 0.0), Coords(-self.getSize()*3/10, -self.getSize()/5), Coords(-self.getSize()*3/10, self.getSize()/5)])
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        if(event_type==EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
+           print("Clicou dentro")
         return False
 
 
@@ -744,7 +785,7 @@ class AndGate(Gate):
         return super().gateOut().setValue(self.getIn(0).getValue() and self.getIn(1).getValue())
 
     def draw(self):
-        point = super().draw()
+        super().draw()
 
         # set center
         glMatrixMode(GL_MODELVIEW)
@@ -786,7 +827,7 @@ class AndGate(Gate):
 
         glPopMatrix()
 
-        return point
+        return self
 
     def isInside(self, coords) -> bool:
         return False
@@ -801,7 +842,8 @@ class NandGate(AndGate):
                                               and self.getIn(1).getValue()))
 
     def draw(self):
-        point = super().draw()
+        super().draw()
+        point = self.getD()
         point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
 
@@ -817,7 +859,7 @@ class OrGate(Gate):
         return super().gateOut().setValue(self.getIn(0).getValue() or self.getIn(1).getValue())
 
     def draw(self):
-        point = super().draw()
+        super().draw()
 
         # set center
         glMatrixMode(GL_MODELVIEW)
@@ -865,7 +907,7 @@ class OrGate(Gate):
 
         glPopMatrix()
 
-        return point
+        return self
 
     def isInside(self, coords) -> bool:
         return False
@@ -880,7 +922,8 @@ class NorGate(OrGate):
                                               or self.getIn(1).getValue()))
 
     def draw(self):
-        point = super().draw()
+        super().draw()
+        point = self.getD()
         point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
 
@@ -896,7 +939,7 @@ class XorGate(OrGate):
         return super().gateOut().setValue(self.getIn(0).getValue() != self.getIn(1).getValue())
 
     def draw(self):
-        point = super().draw()
+        super().draw()
 
         # set center
         glMatrixMode(GL_MODELVIEW)
@@ -917,7 +960,7 @@ class XorGate(OrGate):
 
         glPopMatrix()
 
-        return point
+        return self
 
     def isInside(self, coords) -> bool:
         return False
@@ -931,7 +974,8 @@ class XnorGate(XorGate):
         return super().gateOut().setValue(self.getIn(0).getValue() == self.getIn(1).getValue())
 
     def draw(self):
-        point = super().draw()
+        super().draw()
+        point = self.getD()
         point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
 

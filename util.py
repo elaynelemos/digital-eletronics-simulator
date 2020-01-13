@@ -200,6 +200,9 @@ class Coords(Element):
     def mul(self, value):
         return Coords(self.getX()*value, self.getY()*value)
 
+    def middle(self, coords):
+        return Coords((self.getX()+coords.getX())/2, (self.getY()+coords.getY())/2)
+
     def apply(self):
         glVertex3f(self.getX(), self.getY(), 0.0)
         return self
@@ -233,6 +236,9 @@ class Coords(Element):
         c0 = coord.sum(Coords(-a, -b))
         c1 = coord.sum(Coords(a, b))
         return self.__x >= c0.getX() and self.__x <= c1.getX() and self.__y >= c0.getY() and self.__y <= c1.getY()
+
+    def equals(self, c):
+        return c.getX() == self.getX() and c.getY() == self.getY()
 
     def __str__(self):
         return "COORDS[x: "+str(self.getX())+" y:"+str(self.getY())+"]"
@@ -373,3 +379,57 @@ def alfa_num_around(c: Coords, a: float, d, p: bool = False, sc: bool = False, b
     # segment r
     if (bin and d & 8192 != 0) or (not bin and d in [b'V', b'W', b'X', b'Z', b'0', b'\0']):
         rect_polygon_around(c.sum(Coords(-b/2, a/2)), a/2, w, angle=-63.7)
+
+
+def rect_top_bottom(c: Coords, x1: Coords, x2: Coords) -> int:
+    x0 = None
+    
+
+    if x1.getX() < x2.getX():
+        x0 = x1
+        x1 = x2
+    else:
+        x0 = x2
+
+    if x1.getX() == x0.getX():
+        if c.getY() > x0.getY() and c.getY() > x1.getY():
+            return 1
+        elif c.getY() < x0.getY() and c.getY() < x1.getY():
+            return -1
+        else :
+            return 0
+    y = ((c.getX()-x0.getX())*(x1.getY()-x0.getY()) / \
+        (x1.getX()-x0.getX())) + x0.getY()
+    return 1 if c.getY() > y else (-1 if c.getY() < y else 0)
+
+
+def is_inside_triangle(c: Coords, l: [Coords]) -> bool:
+    if len(l) != 3:
+        print("Coordenadas Inválidas (Não é um triangulo)")
+        return False
+    # identificar intervalos em X
+        # obter o ponto com menor X
+        # obter o ponto com maior X
+        # obter o ponto intermediario
+    x0 = l[0]
+    x2 = l[0]
+    for i in l:
+        x0 = i if i.getX() < x0.getX() else x0
+        x2 = i if i.getX() > x2.getX() else x2
+    x1 = x0
+    for i in l:
+        x1 = i if not i.equals(x0) and not i.equals(x2) else x1
+    up = x1.getY() > x0.getY() and x1.getY() > x2.getY()
+
+    # identificar intevalos em Y em função de X
+    if(c.getX() >= x0.getX() and c.getX() <= x1.getX()):
+        if(up):
+            return rect_top_bottom(c, x0, x2) >= 0 and rect_top_bottom(c, x0, x1) <= 0
+        else:
+            return rect_top_bottom(c, x0, x1) >= 0 and rect_top_bottom(c, x0, x2) <= 0
+    if(c.getX() >= x1.getX() and c.getX() <= x2.getX()):
+        if(up):
+            return rect_top_bottom(c, x0, x2) >= 0 and rect_top_bottom(c, x1, x2) <= 0
+        else:
+            return rect_top_bottom(c, x1, x2) >= 0 and rect_top_bottom(c, x0, x2) <= 0
+    return False

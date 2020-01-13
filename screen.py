@@ -113,6 +113,7 @@ glutInit()
 glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
 glutInitWindowPosition(0, 0)
 glutInitWindowSize(500, 500)
+glutInitWindowPosition(2000,0)
 
 wind = glutCreateWindow("Hello World")
 glutDisplayFunc(showScreen)
