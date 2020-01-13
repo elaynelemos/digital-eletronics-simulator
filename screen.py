@@ -81,6 +81,7 @@ def keyboard_ascii(key, x, y):
         exit()
     if window.event(EVENT_TYPE_KEY_ASCII, coords=convert(x, y), key=key):
         showScreen()
+    #windowGlobal.event(EVENT_TYPE_MOUSE, key, None,None,None)
     # Lista de caracteres
     # b'\x1b' : ESC
     # b'\x08' : BACKSPACE
@@ -97,16 +98,17 @@ def keyboard_ascii(key, x, y):
 
 def keyboard_special(key, x, y):
     # Assign functions to keys of keyboard without ASCII code
+    
     return None
 
 
 def mouse(button, state, x, y):
     # Assign functions to keys of mouse
-    if state == GLUT_UP:
-        windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y))
-        showScreen()
-    if window.event(EVENT_TYPE_MOUSE, coords=convert(x, y), button=button, state=state):
-        showScreen()
+    #if state == GLUT_UP:
+    windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y))
+    showScreen()
+    #if window.event(EVENT_TYPE_MOUSE, coords=convert(x, y), button=button, state=state):
+        #showScreen()
     #return None
 
 

@@ -21,6 +21,8 @@ class Window(Element):
         self.center = center
         return self
 
+    def getCenter(self)->Coords:
+        return self.center
     def setSize(self, size: Coords):
         self.size = size
         return self
@@ -223,16 +225,16 @@ class Panel(Element):
         Color(131/255, 99/255, 33/255).apply()
         glLineWidth(0.1)
         glBegin(GL_LINE_LOOP)
-        glVertex2f((27-self.__coords.getX()),self.shift +23- self.__coords.getY())
+        glVertex2f((27-self.__coords.getX()),self.shift +24- self.__coords.getY())
         glVertex2f(27-self.__coords.getX(),self.shift + self.__coords.getY())
         glVertex2f(self.__coords.getX()-3, self.shift +self.__coords.getY())
-        glVertex2f(self.__coords.getX()-3,self.shift + 23-self.__coords.getY())
+        glVertex2f(self.__coords.getX()-3,self.shift + 24-self.__coords.getY())
         glEnd()
         glLineWidth(3)
 
         #draw panel contents
         if self.__window is not None:
-            self.__window.draw()
+           self.__window.draw()
 
     def isInside(self, x: int, y: int)->bool:
         if (((27-self.__coords.getX()) < x and x< (self.__coords.getX()-3)) and ((self.shift +23- self.__coords.getY()) > y > (self.shift + 23-self.__coords.getY()))):
@@ -326,10 +328,9 @@ class IconZoomMore(Element):
             return True
         else:
             return False
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None)->bool:
+        pass
 
-
-    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        return False
 
 class IconZoom(Element):
     __coords: Coords = None
@@ -459,6 +460,8 @@ class IconStart(Icon):
 
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
+        pass
 
 class IconStop(Icon):
 
@@ -486,6 +489,8 @@ class IconStop(Icon):
 
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
+        pass
 class IconPrevious(Icon):
 
     def __init__(self,coord: Coords(0,0)):
@@ -515,9 +520,17 @@ class IconPrevious(Icon):
         Coords((4-super().getCoords().getX()),6-super().getCoords().getY()).apply()
         glEnd()
         glLineWidth(3.0)
-
+    
+    
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP: 
+            if self.isInside(coords.getX(), coords.getY()) == True:
+                coordsWindow = windowsBar.getPanel().getWindow().getCenter()
+                windowsBar.getPanel().getWindow().setCenter(Coords(coordsWindow.getX()-5.0, coordsWindow.getY()))
+       
 
 class IconMoreAba(Icon):
 
@@ -562,9 +575,13 @@ class IconMoreAba(Icon):
         Coords((5-super().getCoords().getX()),3-super().getCoords().getY()).apply()
         glEnd()
 
-
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
+        return None
+       
+
 
 class IconNext(Icon):
     def __init__(self,coord: Coords(0,0)):
@@ -597,6 +614,11 @@ class IconNext(Icon):
 
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP: 
+            if self.isInside(coords.getX(), coords.getY()) == True:
+                coordsWindow = windowsBar.getPanel().getWindow().getCenter()
+                windowsBar.getPanel().getWindow().setCenter(Coords(coordsWindow.getX()+5.0, coordsWindow.getY()))
 
 class IconZoomLess(IconZoom):
     def __init__(self, coord: Coords(0,0)):
@@ -611,6 +633,8 @@ class IconZoomLess(IconZoom):
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
 
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
+        pass
     def draw(self):
         super().draw()
         self.drawDetail()
@@ -634,6 +658,8 @@ class IconZoomMore(IconZoom):
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
 
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
+        pass
     def draw(self):
 
         super().draw()
@@ -674,6 +700,8 @@ class WindowsBar(Element):
         self.__panel = panel
     def getPanel(self):
         return self.__panel
+    def getPanelComponents(self):
+        return self.__painelComponents
 
     def addComponentWindow(self,  coords: Coords):
         component = self.__painelComponents.component(coords)
@@ -711,12 +739,23 @@ class WindowsBar(Element):
 
     def drawLines(self):
         glColor3f(169/255,207/255,233/255)
-        glBegin(GL_POLYGON)
-        Coords((24-self.__windowSize.getX()),self.shift + 20- self.__windowSize.getY()).apply()
-        Coords(24-self.__windowSize.getX(),self.shift +  self.__windowSize.getY()).apply()
-        Coords(self.__windowSize.getX(),self.shift +  self.__windowSize.getY()).apply()
-        Coords(self.__windowSize.getX(),self.shift +  20-self.__windowSize.getY()).apply()
-        glEnd()
+      
+        rect(Coords(24-self.__windowSize.getX(),self.shift + 20- self.__windowSize.getY()),
+        Coords(24-self.__windowSize.getX(),self.__windowSize.getY()),
+        Coords(27 - self.__windowSize.getX(),self.__windowSize.getY()),
+        Coords(27 -self.__windowSize.getX(),self.shift +  20-self.__windowSize.getY()))
+
+        rect(Coords(24-self.__windowSize.getX(),self.shift + 20- self.__windowSize.getY()),
+        Coords(24-self.__windowSize.getX(),self.shift + 24 -  self.__windowSize.getY()),
+        Coords(self.__windowSize.getX(),self.shift + 24 - self.__windowSize.getY()),
+        Coords(self.__windowSize.getX(),self.shift +  20-self.__windowSize.getY()))
+
+        rect(Coords(self.__windowSize.getX() - 2.98,self.shift + 20- self.__windowSize.getY()),
+        Coords(self.__windowSize.getX() - 2.98,self.__windowSize.getY()),
+        Coords(self.__windowSize.getX(),self.__windowSize.getY()),
+        Coords(self.__windowSize.getX(),self.shift +  20-self.__windowSize.getY()))
+
+        
 
     def close(self, x: int, y: int) ->bool:
         if (((68-self.__windowSize.getX()+ self.__distanceAba) < x and x < (72-self.__windowSize.getX()+ self.__distanceAba)) and ((self.shift +12- self.__windowSize.getY()) < y and y < (self.shift +16-self.__windowSize.getY()))):
@@ -756,16 +795,11 @@ class WindowsBar(Element):
         glEnd()
 
         Color(0.0,0.0,0.0).apply()
-        glBegin(GL_LINES)
-        Coords((68-self.__windowSize.getX()),self.shift  +16- self.__windowSize.getY()).apply()
-        Coords(72-self.__windowSize.getX(), self.shift  +12-self.__windowSize.getY()).apply()
-        glEnd()
-
-        glBegin(GL_LINES)
-        Coords((68-self.__windowSize.getX()),self.shift  +12- self.__windowSize.getY()).apply()
-        Coords(72-self.__windowSize.getX(), self.shift  +16-self.__windowSize.getY()).apply()
-        glEnd()
-
+        line(Coords((68-self.__windowSize.getX()),self.shift  +16- self.__windowSize.getY()),
+            Coords(72-self.__windowSize.getX(), self.shift  +12-self.__windowSize.getY()),3.0)
+        
+        line(Coords((68-self.__windowSize.getX()),self.shift  +12- self.__windowSize.getY()),
+        Coords(72-self.__windowSize.getX(), self.shift  +16-self.__windowSize.getY()),3)
         glPopMatrix()
 
     def draw(self):
@@ -773,9 +807,9 @@ class WindowsBar(Element):
         if self.__focus == True:
             self.bar()
             self.drawLines()
-            self.__painelComponents.draw()
-            if self.__panel is not None:
-                self.__panel.draw()
+            #self.__painelComponents.draw()
+            #if self.__panel is not None:
+            #    self.__panel.draw()
 
         else:
             self.bar()
@@ -824,11 +858,24 @@ class WindowGlobal(Element):
     def drawAbas(self):
         for i in self.workSet:
             i.draw()
+   
 
-
+    def drawShadow(self):
+        Color(228/255, 233/255, 237/255).apply()  
+        rect(Coords(-self.__width,-self.__height), Coords(-self.__width,self.__height),Coords(27-self.__width,self.__height),Coords(27-self.__width,-self.__height))
+        rect(Coords(27-self.__width,-self.__height), Coords(27-self.__width,38-self.__height),Coords(self.__width,38-self.__height),Coords(self.__width,-self.__height))
+        
     def draw(self):
+        
+        
+        if self.__whatAbaIsFocus > -1:
+            self.workSet[self.__whatAbaIsFocus].getPanel().draw()
+            self.drawShadow()
+            self.workSet[self.__whatAbaIsFocus].getPanelComponents().draw()
+        #self.drawShadow()
         self.drawAbas()
         self.drawPainelOfTools()
+        
         self.drawTools()
         return self
 
@@ -935,14 +982,16 @@ class WindowGlobal(Element):
 
     def event(self, event_type: int, key=None, button=None, state=None, coords: Coords = None) -> bool:
 
-
-        self.monitoreWindowsTools(coords)                       #check if any icons have been triggered
-        self.windowBarFocusNow(coords.getX(), coords.getY())    #check if any bars have been triggered and assign focus to her
-        self.verifyBars(coords.getX(), coords.getY())           #check if any bars have close, if true remove its
-        self.addComponent(coords)
+        if state == GLUT_UP:    
+            self.monitoreWindowsTools(coords)                       #check if any icons have been triggered
+            self.windowBarFocusNow(coords.getX(), coords.getY())    #check if any bars have been triggered and assign focus to her
+            self.verifyBars(coords.getX(), coords.getY())           #check if any bars have close, if true remove its
+            self.addComponent(coords)
         
         #If there is a tab in focus triggered the event in its tab
         if  self.__whatAbaIsFocus > -1: 
-            self.workSet[self.__whatAbaIsFocus].event(event_type, key=key, button=button, state=state, coords=coords)
-
+                self.workSet[self.__whatAbaIsFocus].event(event_type, key=key, button=button, state=state, coords=coords)
+                if len(self.tools) > 0:
+                    for i in self.tools:
+                        i.event(event_type, key, button, state, coords, self.workSet[self.__whatAbaIsFocus])
         return None
