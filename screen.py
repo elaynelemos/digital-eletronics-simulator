@@ -17,6 +17,7 @@ def init():
     
     #glClearColor(.9, 0.8, .6, 1.0)
     
+    
     window.elements.append(Display())
     window.elements[0].setRotation()
     window.elements[0].setTranslation(Coords(-50, -50))
@@ -109,15 +110,10 @@ def keyboard_special(key, x, y):
 
 def mouse(button, state, x, y):
     # Assign functions to keys of mouse
-    #if state == GLUT_UP:
     windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y))
-    #wireManager.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y))
     showScreen()
-    #if window.event(EVENT_TYPE_MOUSE, coords=convert(x, y), button=button, state=state):
-        #showScreen()
-    #return None
+   
 def mouseWalkingNotPressed(x,y):
-    #wireManager.event(EVENT_TYPE_MOUSE_WALKING_NOT_PRESS, None, None, None, coords=convert(x, y))
     windowGlobal.event(EVENT_TYPE_MOUSE_WALKING_NOT_PRESS, None, None, None, coords=convert(x, y))
     showScreen()
 
