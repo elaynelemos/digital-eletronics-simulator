@@ -189,7 +189,7 @@ class PainelComponents(Element):
             elif component == XNORGATE:
                 return XnorGate()
             elif component == KEYBOARD:
-                return KeyBoard()
+                return KeyBoard().setTranslation(Coords(10.0,10.0)).setRotation()
             else:
                 return None
 

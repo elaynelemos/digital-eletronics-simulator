@@ -250,22 +250,24 @@ class Coords(Element):
         glTranslatef(self.__x, self.__y, 0.0)
 
 
-def rect(c1: Coords, c2: Coords,c3: Coords,c4: Coords):
+def rect(c1: Coords, c2: Coords, c3: Coords, c4: Coords):
     glBegin(GL_QUADS)
-    Coords(c1.getX(),c1.getY()).apply()
-    Coords(c2.getX(),c2.getY()).apply()
-    Coords(c3.getX(),c3.getY()).apply()
-    Coords(c4.getX(),c4.getY()).apply()
+    Coords(c1.getX(), c1.getY()).apply()
+    Coords(c2.getX(), c2.getY()).apply()
+    Coords(c3.getX(), c3.getY()).apply()
+    Coords(c4.getX(), c4.getY()).apply()
     glEnd()
+
 
 def line(c1: Coords, c2: Coords, lineWidth: float):
     glLineWidth(lineWidth)
     glBegin(GL_LINES)
-    Coords(c1.getX(),c1.getY()).apply()
-    Coords(c2.getX(),c2.getY()).apply()
+    Coords(c1.getX(), c1.getY()).apply()
+    Coords(c2.getX(), c2.getY()).apply()
     glEnd()
     glLineWidth(3)
-     
+
+
 def rect_around(c: Coords, a: float, b: float = None, p: int = 0):
     b = a if b == None else b
 
