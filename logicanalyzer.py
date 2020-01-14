@@ -23,20 +23,18 @@ class LogicAnalyzer:
         self.__entries = entries
         self.__wires = wires
         self.__checkers = checkers
-        
-        
-def factCheck(entries:List[Entry], wires:List[Wire],checkers:List[Checker]) -> None:
-    for i in checkers:
-        if i.getValue() is None and i.getChecked() is False:
-            for j in wires:
-                if isEqualPoints(i.getCoords(), j.getWireEndP()):
-                    for k in entries:
-                        if isEqualPoints(j.getWireStartP(), k.getCoords()):
-                            i.setValue(k.getValue())
-            i.setChecked(True)
-            if not(i.getChecked()):
-                i.setValue(None)
+    
 
-def prepareCheckers(checkers:List[Checker]) -> None:
-    for i in checkers:
-        i.setChecked(False)
+    def defineValues(entries:List[Entry], wires:List[Wire],checkers:List[Checker]) -> None:
+        for i in checkers:
+            if i.getValue() is None and i.getChecked() is False:
+                for j in wires:
+                    if isEqualPoints(i.getCoords(), j.getWireEndP()):
+                        for k in entries:
+                            if isEqualPoints(j.getWireStartP(), k.getCoords()):
+                                i.setValue(k.getValue())
+            i.setChecked(True)
+
+    def prepareCheckers(checkers:List[Checker]) -> None:
+        for i in checkers:
+            i.setChecked(False)
