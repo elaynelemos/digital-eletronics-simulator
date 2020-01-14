@@ -3,15 +3,15 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 
 from components import Entry, Checker, Display, NotGate, AndGate, NandGate, OrGate, NorGate, XorGate, XnorGate, KeyBoard
-from elements import Window,WindowsBar, WindowGlobal, IconZoomMore, IconPrevious, IconStart, IconStop, IconZoomLess, IconNext, IconMoreAba,PainelComponents
+from elements import Window,WindowsBar, WindowGlobal, IconZoomMore, IconPrevious, IconStart, IconStop, IconZoomLess, IconNext, IconMoreAba,PainelComponents, WireManager,IconLineTypeInverterZ,IconLineTypeZ
 from util import Coords, alfa_num_around, EVENT_TYPE_MOUSE, EVENT_TYPE_KEY_ASCII
-
+EVENT_TYPE_MOUSE_WALKING_NOT_PRESS = 0
 
 window: Window = Window()
 windowGlobal: WindowGlobal = WindowGlobal()
 screen = {}
 
-
+wireManager: WireManager = WireManager()
 def init():
     glClearColor(228/255, 233/255, 237/255, 1.0)
     
@@ -51,7 +51,8 @@ def init():
     window.elements.append(KeyBoard())
     window.elements[6].setTranslation(Coords(-50, 50))
     
-
+    windowGlobal.tools.append(IconLineTypeZ(Coords(0,0)))
+    windowGlobal.tools.append(IconLineTypeInverterZ((Coords(0,0))))
     windowGlobal.tools.append(IconNext(Coords(0,0)))
     windowGlobal.tools.append(IconPrevious(Coords(0,0)))
     windowGlobal.tools.append(IconZoomMore(Coords(0,0)))
@@ -60,6 +61,7 @@ def init():
     windowGlobal.tools.append(IconStart(Coords(0,0)))
     windowGlobal.tools.append(IconMoreAba(Coords(0,0)))
     windowGlobal.configurePositionTools()
+    
     # Insert Code to inicialization
 
 
@@ -68,7 +70,10 @@ def showScreen():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     #window.draw()
+    #wireManager.draw()
+    
     windowGlobal.draw()
+    
     glFlush()
 
 
@@ -79,7 +84,7 @@ def convert(x, y):
 def keyboard_ascii(key, x, y):
     if key == b'\x1b':  # ESC
         exit()
-    if window.event(EVENT_TYPE_KEY_ASCII, coords=convert(x, y), key=key):
+    #if window.event(EVENT_TYPE_KEY_ASCII, coords=convert(x, y), key=key):
         showScreen()
     #windowGlobal.event(EVENT_TYPE_MOUSE, key, None,None,None)
     # Lista de caracteres
@@ -106,11 +111,15 @@ def mouse(button, state, x, y):
     # Assign functions to keys of mouse
     #if state == GLUT_UP:
     windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y))
+    #wireManager.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y))
     showScreen()
     #if window.event(EVENT_TYPE_MOUSE, coords=convert(x, y), button=button, state=state):
         #showScreen()
     #return None
-
+def mouseWalkingNotPressed(x,y):
+    #wireManager.event(EVENT_TYPE_MOUSE_WALKING_NOT_PRESS, None, None, None, coords=convert(x, y))
+    windowGlobal.event(EVENT_TYPE_MOUSE_WALKING_NOT_PRESS, None, None, None, coords=convert(x, y))
+    showScreen()
 
 def windowResizeHandler(width, height):
     screen['width'] = width
@@ -137,6 +146,7 @@ glutDisplayFunc(showScreen)
 glutIdleFunc(showScreen)
 glutReshapeFunc(windowResizeHandler)
 
+glutPassiveMotionFunc(mouseWalkingNotPressed)
 glutKeyboardFunc(keyboard_ascii)
 glutSpecialFunc(keyboard_special)
 glutMouseFunc(mouse)

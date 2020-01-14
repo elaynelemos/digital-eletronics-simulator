@@ -9,9 +9,123 @@ from OpenGL.GLU import *
 componentClasses = [Entry, Checker, Display, NotGate, AndGate,
                     NandGate, OrGate, NorGate, XorGate, XnorGate, KeyBoard]
 
+EVENT_TYPE_MOUSE_WALKING_NOT_PRESS = 0
+#Types of wires
+TYPE_WIRE_Z = 0
+TYPE_WIRE_Z_INVERT = 1 
 
+#This class is resposible for draw the wires in window. All the operations needed 
+#to do this are here
+class WireManager(Element):
+    __startWire: Coords = None          #Wire star coordinate
+    __endWire: Coords = None            #Wire end coordinate
+    __drawWire: bool = False            #Determine if the user want draw a wire
+    __typeWire: int = None              #Determine type wire
+    def __init__(self):
+        super().__init__()
+        self.dotsWires = []
+        self.setTypeWire(TYPE_WIRE_Z_INVERT)
+
+    def setTypeWire(self,type: int):
+        self.__typeWire = type
+    def setEndWire(self,coords = Coords):
+        self.__endWire = coords
+    def getEndWire(self)->Coords:
+        return self.__endWire
+    def setStartWire(self,coords = Coords):
+        self.__startWire = coords
+    def getStartWire(self)->Coords:
+        return self.__drawWire
+    def setDrawWire(self,yes: bool):
+        self.__drawWire = yes
+    def getDrawWire(self)->bool:
+        return self.__drawWire
+
+    def validPoint(self,x: float)->int:
+      
+        valor = (x -x%POINT_SPACE + POINT_SPACE) if x%POINT_SPACE>0 else (x - x%POINT_SPACE)
+        return int(valor)
+    
+    #Procedure needed for translate the coordinate wires
+    def updateCoordDotsWires(self,translate: Coords):
+        for i in self.dotsWires:
+            for j in range(len(i)):
+                coord = (Coords(i[j].getX()+translate.getX(), i[j].getY()+translate.getY()))
+                i[j] = coord
+
+    #Procedure for draw the current wire,whose wire yet not been completed by the user
+    def drawWireCurrent(self):
+        Color(0.0,0.0,0.0).apply()
+        glBegin(GL_LINE_STRIP)
+
+        Coords(self.validPoint(self.__startWire.getX()),self.validPoint(self.__startWire.getY())).apply()
+        if self.__typeWire == TYPE_WIRE_Z_INVERT:
+            Coords(self.validPoint(self.__startWire.getX()),self.validPoint((self.__endWire.getY() + self.__startWire.getY())/2)).apply()
+            Coords(self.validPoint(self.__endWire.getX()),self.validPoint((self.__endWire.getY()+self.__startWire.getY())/2)).apply()
+        if self.__typeWire == TYPE_WIRE_Z:
+            Coords(self.validPoint((self.__startWire.getX() + self.__endWire.getX())/2),self.validPoint(self.__startWire.getY())).apply()
+            Coords(self.validPoint((self.__startWire.getX()+self.__endWire.getX())/2),self.validPoint(self.__endWire.getY())).apply()
+        Coords(self.validPoint(self.__endWire.getX()),self.validPoint(self.__endWire.getY())).apply()
+        glEnd()
+
+    #Take the coordinates of the last wire the user made and add it to the wire list to draw 
+    # porsteriomente
+    def addDotsToWire(self):
+        list = []
+        list.append(Coords(self.validPoint(self.__startWire.getX()),self.validPoint(self.__startWire.getY())))
+        if self.__typeWire == TYPE_WIRE_Z_INVERT:
+            list.append(Coords(self.validPoint(self.__startWire.getX()),self.validPoint((self.__endWire.getY() + self.__startWire.getY())/2)))
+            list.append(Coords(self.validPoint(self.__endWire.getX()),self.validPoint((self.__endWire.getY()+self.__startWire.getY())/2)))
+        if self.__typeWire == TYPE_WIRE_Z:
+            list.append( Coords(self.validPoint((self.__startWire.getX() + self.__endWire.getX())/2),self.validPoint(self.__startWire.getY())))
+            list.append(Coords(self.validPoint((self.__startWire.getX()+self.__endWire.getX())/2),self.validPoint(self.__endWire.getY())))
+        list.append(Coords(self.validPoint(self.__endWire.getX()),self.validPoint(self.__endWire.getY())))
+        self.dotsWires.append(list)
+        
+
+    def isInside(self):
+        pass
+
+
+    #Draw all wires already terminated    
+    def drawAllWires(self):
+        for i in self.dotsWires:
+
+            Color(0.0,0.0,0.0).apply()
+            glBegin(GL_LINE_STRIP)
+            for j in i:
+               j.apply()
+            glEnd()
+
+    #Draw wire
+    def draw(self):
+        self.drawAllWires()
+        if self.__drawWire == True:
+            self.drawWireCurrent()
+
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        
+        if event_type == EVENT_TYPE_MOUSE:
+          
+            if button == GLUT_LEFT_BUTTON and state == GLUT_UP:
+                self.__drawWire = True
+                self.setStartWire(coords)
+
+            if button == GLUT_RIGHT_BUTTON and state == GLUT_UP:
+                self.__drawWire = False
+                self.addDotsToWire()
+     
+        if event_type == EVENT_TYPE_MOUSE_WALKING_NOT_PRESS:
+                if self.__drawWire == True:
+                   self.setEndWire(coords)
+        
+        return None
+
+#This class is responsible for draw the elements like gaters and entrys and grid 
 class Window(Element):
     factor: float = 0.1
+   
 
     def __init__(self):
         super().__init__()
@@ -19,13 +133,25 @@ class Window(Element):
         self.size = Coords(0, 0)
         self.zoom = 1.0
         self.elements = []
+        self.windowStartPosition = Coords(0,0)
+      
+       
+    #Set the window position in the current coordinates plane
+    def setWindowStartPosition(self, windowStartPosition: Coords):
+        self.windowStartPosition = windowStartPosition
+        
+    def getWindowStartPosition(self)->Coords:
+        return self.windowStartPosition
 
+    #Set the window center in the current coordinates plane
     def setCenter(self, center: Coords):
         self.center = center
         return self
 
     def getCenter(self)->Coords:
         return self.center
+
+    #Set the window center in the current coordinates plane
     def setSize(self, size: Coords):
         self.size = size
         return self
@@ -44,7 +170,25 @@ class Window(Element):
         elif (isinstance(zoom, int) and index >= 0 and index < len(self.elements)):
             return self.elements[index]
 
+    def validPoint(self,x: float)->int:
+        if x>=0:
+            valor = (x -x%POINT_SPACE + POINT_SPACE) if x%POINT_SPACE>0 else (x - x%POINT_SPACE)
+            return int(valor)
+        else: 
+            valor = (x - x%POINT_SPACE) if x%POINT_SPACE>0 else (x -x%POINT_SPACE + POINT_SPACE) 
+            return int(valor)
+
     def draw(self):
+        
+        #Draw the windows grid
+        Color(0.0,0.0,0.0).apply()
+        glPointSize(1.0)
+        glBegin(GL_POINTS)
+        for i in range(self.validPoint(self.windowStartPosition.getX()),self.validPoint(self.size.getX()), 5):
+            for j in range(self.validPoint(self.windowStartPosition.getY()),self.validPoint(self.size.getY()), 5):
+                Coords(i,j).apply()
+        glEnd()        
+        """
         for i in range(20):
             for j in range(20):
                 self.center.sum(Coords(i*POINT_SPACE, j*POINT_SPACE)
@@ -61,14 +205,26 @@ class Window(Element):
             for j in range(1, 20):
                 self.center.sum(Coords(-i*POINT_SPACE, -j*POINT_SPACE)
                                 ).draw(radius=0.5, color=Color(r=0.5, g=0.5, b=0.5))
+        """
+       
+        
+       
         self.center.draw(radius=1.0)
-
+        #Draw the elements in window
         for i in self.elements:
             i.draw()
         return self
+       
+    def adjustCenter(self):
+        self.setCenter(Coords((self.size.getX()/2)+self.windowStartPosition.getX(), (self.size.getY()/2)+self.windowStartPosition.getY()))
+       
+    def updateCoordsElementsWindows(self, translate: Coords):
+         for i in self.elements:
+                i.setCoords(Coords(i.getCoords().getX()+translate.getX(),i.getCoords().getY()+translate.getY()))
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-
+        
+        
         for i in range(len(self.elements)):
             if self.elements[len(self.elements)-i-1].event(event_type, key=key, button=button, state=state, coords=coords):
                 return True
@@ -78,7 +234,8 @@ class Window(Element):
         return False
 
 
-# Painel contends the logics ports and others components like checker and entry.
+# Painel contends the logics ports and others components like checker and entry 
+# for choose by user.
 class PainelComponents(Element):
     # coordinate of glut windows, value required to built the painelComponents.
     __coords: Coords = None
@@ -159,56 +316,79 @@ class PainelComponents(Element):
             span = span + self.sizeCell
 
     # Return the component choosed
-    def component(self, coord: Coords):
+    def component(self, coord: Coords, elementsPositionStart: Coords = Coords(0,0)):
 
         if self.isInside(coord.getX(), coord.getY()) == True:
             component = self.componentChoosed(coord.getY())
             if component == ENTRY:
-                return Entry()
+                return Entry(elementsPositionStart)
             elif component == CHECKER:
-                return Checker()
+                return Checker(elementsPositionStart)
             elif component == DISPLAY:
-                return Display()
+                return Display(elementsPositionStart)
             elif component == NOTGATE:
-                return NotGate()
+                return NotGate(elementsPositionStart)
             elif component == ANDGATE:
-                return AndGate()
+                return AndGate(elementsPositionStart)
             elif component == NANDGATE:
-                return NandGate()
+                return NandGate(elementsPositionStart)
             elif component == ORGATE:
-                return OrGate()
+                return OrGate(elementsPositionStart)
             elif component == NORGATE:
-                return NorGate()
+                return NorGate(elementsPositionStart)
             elif component == XORGATE:
-                return XorGate()
+                return XorGate(elementsPositionStart)
             elif component == XNORGATE:
-                return XnorGate()
+                return XnorGate(elementsPositionStart)
             elif component == KEYBOARD:
-                return KeyBoard()
+                return KeyBoard(elementsPositionStart)
             else:
                 return None
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        if event_type == GLUT_UP and coords is not None:
-            return None
+        
+        return None
 
 # The Panel contains the workspace. Here can assemble the components and simulate them.
-
-
 class Panel(Element):
 
     # Coordinate of glut windows, value required to built the painel.
     __coords: Coords = None
     __window: Window = None  # All components will be stored here.
+    __wireManager: WireManager = None
+    __translation: Coords = None
 
     def __init__(self, coords):
         super().__init__()
         self.setCoords(coords)
         self.setWindow(Window())
-        self.shift = 15
+        self.shift = 15         
+        self.getWindow().setWindowStartPosition(Coords(27-self.__coords.getX(),24- self.__coords.getY() ))
+        self.getWindow().setSize(Coords(self.__coords.getX()*2 - 27,self.__coords.getY()*2 -24))
+        self.setWireManager(WireManager())
+        self.translateWindows(Coords(0,0))
+        self.__window.adjustCenter()
+    
+    def translateWindows(self,coords: Coords):
+
+        self.__translation = coords
+    
+    def translate(self, coords:Coords):
+        self.__window.updateCoordsElementsWindows(coords)
+        self.__wireManager.updateCoordDotsWires(coords)
+
+    def setWireManager(self, wireManager: WireManager):
+        self.__wireManager = wireManager
+
+    def getWireManager(self)->WireManager:
+        return  self.__wireManager
 
     def setCoords(self, coords: Coords) -> bool:
         self.__coords = coords
+        if self.__window is not None:
+            self.getWindow().setWindowStartPosition(Coords(27-self.__coords.getX(),self.shift +24- self.__coords.getY() ))
+            self.getWindow().setSize(Coords(self.__coords.getX()*2 - 27,self.__coords.getY()*2 - self.shift +24))
+       
 
     def addComponentWindow(self, component):
         if self.__window is not None:
@@ -244,18 +424,24 @@ class Panel(Element):
 
         # draw panel contents
         if self.__window is not None:
-           self.__window.draw()
+          
+            self.__window.draw()
+            self.__wireManager.draw()
 
     def isInside(self, x: int, y: int) -> bool:
-        if (((27-self.__coords.getX()) < x and x < (self.__coords.getX()-3)) and ((self.shift + 23 - self.__coords.getY()) > y > (self.shift + 23-self.__coords.getY()))):
+        if (((27-self.__coords.getX()) < x and x < (self.__coords.getX()-3)) and ((self.shift + 23 - self.__coords.getY()) < y < (self.__coords.getY()))):
             return True
         else:
             return False
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        
+        if self.isInside(coords.getX(), coords.getY()) == True:
+            self.__wireManager.event(event_type, key, button, state, coords)
+      
+        self.__window.event( event_type, key, button, state, coords)
         return None
-        # if event_type == GLUT_UP and coords is not None:
-        #   return None
+        
 
 
 class IconZoomMore(Element):
@@ -334,6 +520,7 @@ class IconZoomMore(Element):
         pass
 
 
+#The following classes are tools (draw like icons) that assist the user in the components assembly process.
 class IconZoom(Element):
     __coords: Coords = None
 
@@ -553,8 +740,7 @@ class IconPrevious(Icon):
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
         if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP: 
             if self.isInside(coords.getX(), coords.getY()) == True:
-                coordsWindow = windowsBar.getPanel().getWindow().getCenter()
-                windowsBar.getPanel().getWindow().setCenter(Coords(coordsWindow.getX()-5.0, coordsWindow.getY()))
+                windowsBar.getPanel().translate(Coords(-POINT_SPACE,0))
        
 
 class IconMoreAba(Icon):
@@ -673,9 +859,63 @@ class IconNext(Icon):
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
         if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP: 
             if self.isInside(coords.getX(), coords.getY()) == True:
-                coordsWindow = windowsBar.getPanel().getWindow().getCenter()
-                windowsBar.getPanel().getWindow().setCenter(Coords(coordsWindow.getX()+5.0, coordsWindow.getY()))
+                coordsWindow = windowsBar.getPanel().translate(Coords(POINT_SPACE,0))
+                #windowsBar.getPanel().getWindow().setCenter(Coords(coordsWindow.getX()+5.0, coordsWindow.getY()))
 
+
+
+
+
+class IconLineTypeInverterZ(Icon):
+    def __init__(self, coord: Coords(0, 0)):
+        super().__init__(coord)
+
+    def draw(self):
+        
+        Color(14/255, 43/255, 92/255).apply()
+        glBegin(GL_LINE_STRIP)
+        Coords((-super().getCoords().getX()),-super().getCoords().getY()).apply()
+        Coords((-super().getCoords().getX()),2.5 - super().getCoords().getY()).apply()
+        Coords((5-super().getCoords().getX()),2.5-super().getCoords().getY()).apply()
+        Coords((5-super().getCoords().getX()),5 -super().getCoords().getY()).apply()
+        glEnd()
+      
+    def isInside(self, x: int, y: int)->bool:
+        return super().isInside(x,y)
+    
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP: 
+            if self.isInside(coords.getX(), coords.getY()) == True:
+                windowsBar.getPanel().getWireManager().setTypeWire(TYPE_WIRE_Z_INVERT)
+               
+
+
+
+
+class IconLineTypeZ(Icon):
+    def __init__(self, coord: Coords(0, 0)):
+        super().__init__(coord)
+
+    def draw(self):
+        Color(14/255, 43/255, 92/255).apply()
+        glBegin(GL_LINE_STRIP)
+        Coords((-super().getCoords().getX()),0-super().getCoords().getY()).apply()
+        Coords((3-super().getCoords().getX()),0- super().getCoords().getY()).apply()
+        Coords((3-super().getCoords().getX()),5-super().getCoords().getY()).apply()
+        Coords((6-super().getCoords().getX()),5 -super().getCoords().getY()).apply()
+        glEnd()
+       
+
+    def isInside(self, x: int, y: int)->bool:
+        return super().isInside(x,y)
+    
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP: 
+            if self.isInside(coords.getX(), coords.getY()) == True:
+                windowsBar.getPanel().getWireManager().setTypeWire(TYPE_WIRE_Z)
+                
+      
 class IconZoomLess(IconZoom):
     def __init__(self, coord: Coords(0, 0)):
         super().__init__(coord)
@@ -740,6 +980,7 @@ class WindowsBar(Element):
     __distanceAba: int = 0
     __painelComponents: PainelComponents = None
     __panel: Panel = None
+   
 
     def __init__(self,  windowBarNumber: int, window: Window = None, focus: bool = True, coords: Coords = Coords(0.0, 0.0)):
         super().__init__()
@@ -752,6 +993,7 @@ class WindowsBar(Element):
         self.shift = 15
         self.__painelComponents = PainelComponents(Coords(100, 100))
         self.__panel = Panel(Coords(100, 100))
+    
 
     def setWindowBarNumber(self, windowBarNumber: int):
         self.__windowBarNumber = windowBarNumber
@@ -877,17 +1119,17 @@ class WindowsBar(Element):
         if self.__focus == True:
             self.bar()
             self.drawLines()
-            #self.__painelComponents.draw()
-            #if self.__panel is not None:
-            #    self.__panel.draw()
-
+           
         else:
             self.bar()
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        if event_type == EVENT_TYPE_MOUSE:
+            if state == GLUT_UP:
+                self.addComponentWindow(coords)
+       
         if self.__panel is not None:
-            self.__panel.event(event_type, key=None,
-                               button=None, state=None, coords=None)
+            self.__panel.event(event_type, key,button, state, coords)
 
 
 ENTRY = 0
@@ -1021,7 +1263,7 @@ class WindowGlobal(Element):
 
     def configurePositionTools(self):
         y = self.__height - 5
-        x = self.__width - 100
+        x = self.__width - 130
         spanInElements = 15
         if self.tools is not None:
             for i in self.tools:
@@ -1045,22 +1287,14 @@ class WindowGlobal(Element):
                     windowBar.onlyOneFocus(self.workSet)
                     self.__whatAbaIsFocus = self.__abaId
                     self.__abaId = self.__abaId+1
-
-    def addComponent(self, coords: Coords):
-
-        # melhorar
-        for i in self.workSet:
-            if i.getFocus() == True:
-                i.addComponentWindow(coords)
-                break
-
+       
     def event(self, event_type: int, key=None, button=None, state=None, coords: Coords = None) -> bool:
 
         if state == GLUT_UP:    
             self.monitoreWindowsTools(coords)                       #check if any icons have been triggered
             self.windowBarFocusNow(coords.getX(), coords.getY())    #check if any bars have been triggered and assign focus to her
             self.verifyBars(coords.getX(), coords.getY())           #check if any bars have close, if true remove its
-            self.addComponent(coords)
+           
         
         #If there is a tab in focus triggered the event in its tab
         if  self.__whatAbaIsFocus > -1: 

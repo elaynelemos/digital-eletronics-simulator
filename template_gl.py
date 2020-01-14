@@ -12,7 +12,7 @@ def init():
 
 def showScreen():
     
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    #glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
     #Insert Code to draw
     
@@ -37,11 +37,15 @@ def keyboard_ascii (key,x,y):
 def keyboard_special(key,x,y):
     # Assign functions to keys of keyboard without ASCII code    
     return
-def mouse(key,x,y):
+def mouse(state,key,x,y):
     # Assign functions to keys of mouse
+    print("Ok")
     return
     
-
+def mouseWalkingNotPressed(x,y):
+    print("ola")
+def mouseWalkingPressed(x,y):
+    print("oi")
 glutInit()
 
 glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA)
@@ -55,6 +59,8 @@ glutIdleFunc(showScreen)
 glutKeyboardFunc (keyboard_ascii)
 glutSpecialFunc(keyboard_special)
 glutMouseFunc(mouse)
+glutPassiveMotionFunc(mouseWalkingNotPressed)
+glutMotionFunc(mouseWalkingPressed)
 
 init()
 
