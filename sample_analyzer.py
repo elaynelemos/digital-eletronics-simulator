@@ -88,8 +88,35 @@ for i in entries:
     print(str(i))
 
 logicAnalyzer = LogicAnalyzer(entries, wires, checkers)
-logicAnalyzer.defineValues()
+#logicAnalyzer.defineValues()
 
+#simulando o analyzer
+
+#primeiro caso
+for i in entries:
+    if i.getCoords().equals(checker_1.getCoords()):
+        checker_1.setValue(i.getValue())
+# segundo caso
+for i in entries:
+    if i.getCoords().equals(checker_2.getCoords()):
+        checker_2.setValue(i.getValue())
+# terceiro caso
+for i in entries:
+    if i.getCoords().equals(checker_3.getCoords()):
+        if(i.getValue() == None and i.getGate()!= None):
+            gate = i.getGate()
+            for j in entries:
+                if j.getCoords().equals(gate.getIn(0).getCoords()):
+                    gate.getIn(0).setValue(j.getValue())
+            for j in entries:
+                if j.getCoords().equals(gate.getIn(1).getCoords()):
+                    gate.getIn(1).setValue(j.getValue())
+            checker_3.setValue(gate.gateOut().getValue())
+
+#o quarto caso exige 2 iterações (é o caso que representa 2 ou mais iterações)
+# a implementação do mesmo estaticamente não ajuda em nada o entendimento
+# e a implementação iterativa deixaria de ser o exemplo de funcionamento 
+#   se tornando quase a própria implementação
 
 # valores atualizados
 """
