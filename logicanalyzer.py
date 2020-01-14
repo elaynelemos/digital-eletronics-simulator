@@ -20,10 +20,27 @@ class LogicAnalyzer:
     __checkers:List[Checker] = []
 
     def __init__(self, entries:List[Entry], wires:List[Wire],checkers:List[Checker]) -> None:
-        self.__entries = entries
-        self.__wires = wires
-        self.__checkers = checkers
-    
+        try:
+            for i in entries:
+                if isEntry(i):
+                    self.__entries.append(i)
+                else:
+                    raise AttributeError("Error! Entry attribute expected. You tried to assign an", type(i))
+            for i in wires:
+                if isWire(i):
+                    self.__wires.append(i)
+                else:
+                    raise AttributeError("Error! Wire attribute expected. You tried to assign an", type(i))
+            for i in checkers:
+                if isChecker(i):
+                    self.__checkers.append(i)
+                else:
+                    raise AttributeError("Error! Checker attribute expected. You tried to assign an", type(i))
+        except AttributeError as ae:
+            print(ae)
+            self.__entries = []
+            self.__wires = []
+            self.__checkers = []
 
     def defineValues(self) -> bool:
         try:
@@ -56,4 +73,3 @@ class LogicAnalyzer:
     def prepareCheckers(self) -> None:
         for i in self.__checkers:
             i.setChecked(False)
-
