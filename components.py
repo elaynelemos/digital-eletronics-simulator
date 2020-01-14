@@ -163,6 +163,7 @@ class Checker(Element):
     __coords: Coords = None
     __orientation = ORIENTATION_RL
     __size = POINT_SPACE*3
+    __checked = None
 
     # the constructor of Entry receives a logic value and the Coords where the entry should be placed.
     def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*3):
@@ -172,6 +173,9 @@ class Checker(Element):
 
     def getValue(self) -> bool:
         return self.__value
+
+    def getChecked(self) -> bool:
+        return self.__checked
 
     def getCoords(self) -> Coords:
         return self.__coords
@@ -187,6 +191,9 @@ class Checker(Element):
         else:
             self.__value = value
             return True
+
+    def setChecked(self, checked:bool) -> bool:
+        self.__checked = checked
 
     # returns True if both coords are valid.
     def setCoords(self, coords: Coords) -> bool:
@@ -524,9 +531,9 @@ class KeyBoard(Element):
 class Gate(Element):
     id: int = 0
     # the attributes (private) only can be reached by getters and setters.
-    __entry: List[Entry] = []
+    __entry: List[Checker] = []
     __coords: Coords = None
-    __out: Coords = None
+    __out: Entry = None
 
     __fill: Color = Color(r=0.4, g=0.6, b=0.4)
     __orientation = ORIENTATION_LR
@@ -540,7 +547,7 @@ class Gate(Element):
         self.__size = size
         self.__updateCoords()
 
-    def getIn(self, i: int) -> Entry:
+    def getIn(self, i: int) -> Checker:
         try:
             if self.__entry is not None and len(self.__entry) > i and self.__entry[i] is not None:
                 return self.__entry[i]
@@ -560,7 +567,7 @@ class Gate(Element):
         return self.__coords
 
     def getOutCoords(self) -> Coords:
-        return self.__out
+        return self.__out.getCoords()
 
     def getFill(self):
         return self.__fill
@@ -653,8 +660,7 @@ class Gate(Element):
                 self.__entry[0].getCoords().sum(Coords(-self.__size/5, 0)))
 
     def gateOut(self) -> Entry:
-        A = Entry(coords=self.__coords.sum(self.__out))
-        return A
+        return self.__out
 
     def setCenter(self):
         self.__coords.glTranslate()
