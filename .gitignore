@@ -1,4 +1,3 @@
-.vscode\
-__pycache__\
-.vscode\*.*
-__pycache__\*.*
+# environment config.#
+.vscode/
+__pycache__/
