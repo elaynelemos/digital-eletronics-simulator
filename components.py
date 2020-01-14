@@ -25,10 +25,6 @@ from OpenGL.GLU import *
 
 import math
 
-RELATIVE_GATEIN_X = 0
-RELATIVE_GATEIN_Y = 0
-RELATIVE_GATEOUT_X = 0
-RELATIVE_GATEOUT_Y = 0
 
 N_ENTRIES = 2
 
@@ -267,7 +263,7 @@ class Checker(Element):
 
 
 class Display(Element):
-    __checks: List[Checks] = None
+    __checks: List[Checker] = None
     __coords: Coords = None
     __fill: Color = Color()
     __ligh_on: Color = Color(r=1.0)
@@ -1067,8 +1063,6 @@ def isWire(component) -> bool:
     return isinstance(component, Wire)
 
 # isEqualPoints(): receives two pairs of Coords and returns True if they have the same x and y.
-
-
 def isEqualPoints(c1: Coords, c2: Coords) -> bool:
     if c1.getX() == c2.getX() and c1.getY() == c2.getY():
         return True
@@ -1077,8 +1071,6 @@ def isEqualPoints(c1: Coords, c2: Coords) -> bool:
 # wiredComponent(): receives an Wire and other component then verifies if the component is connected
 #                  to the Wire begin or end (True if positive). Entry can only be connected to the
 #                  Wire start point.
-
-
 def wiredComponent(w: Wire, component) -> bool:
     if isGate(component) and (isEqualPoints(w.getWireStartP(), component.getCoords()) or isEqualPoints(w.getWireEndP(), component.getCoords())):
         return True
@@ -1089,23 +1081,7 @@ def wiredComponent(w: Wire, component) -> bool:
 
 # connectedComponents(): to be connected the components c1 and c2 must be wired one at start and
 #                       other to end of the Wire component.
-
-
 def connectedComponents(w: Wire, c1, c2) -> bool:
     return (wiredComponent(w, c1) and wiredComponent(w, c2) and
             not(isEqualPoints(c1.getCoords(), c2.getCoords())))
 
-
-"""
-e = Wire([Coords(10,20),Coords(10,20),Coords(10,40),Coords(10,30)])
-print(len(e.getWireP()))
-
-e.refactorWire()
-print(len(e.getWireP()))
-
-print(e.getWireEndP().getY())
-
-e.insertWireP([Coords(50,70)])
-
-print(e.getWireEndP().getY())
-"""
