@@ -157,6 +157,9 @@ class Coords(Element):
         self.setX(x)
         self.setY(y)
 
+    def getCoords(self):
+        return self
+
     def getX(self) -> float:
         return self.__x
 

@@ -90,6 +90,12 @@ class PainelComponents(Element):
         # Each component where in a cell. This attribute determine the size of it.
         self.sizeCell = 10
         self.initPainelComponents = (35 - self.__coords.getY())
+        self.iconsComponnent = []
+        span = self.initPainelComponents
+        for i in componentClasses:
+            span = span + self.sizeCell
+            self.iconsComponnent.append(i(coords=Coords(
+                14-self.__coords.getX(), span-self.sizeCell/2), size=self.sizeCell*0.8))
 
     def setCoords(self, coords: Coords) -> bool:
         self.__coords = coords
@@ -115,8 +121,7 @@ class PainelComponents(Element):
             Coords(23-self.__coords.getX(), span).apply()
             glEnd()
 
-            componentClasses[i](coords=Coords(
-                14-self.__coords.getX(), span-self.sizeCell/2), size=self.sizeCell*0.8).draw()
+            self.iconsComponnent[i].draw()
 
         glLineWidth(3)
 

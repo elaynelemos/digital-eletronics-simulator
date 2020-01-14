@@ -17,6 +17,7 @@ def init():
     
     #glClearColor(.9, 0.8, .6, 1.0)
     
+    """
     window.elements.append(Display())
     window.elements[0].setRotation()
     window.elements[0].setTranslation(Coords(-50, -50))
@@ -50,7 +51,7 @@ def init():
 
     window.elements.append(KeyBoard())
     window.elements[6].setTranslation(Coords(-50, 50))
-    
+    """
 
     windowGlobal.tools.append(IconNext(Coords(0,0)))
     windowGlobal.tools.append(IconPrevious(Coords(0,0)))

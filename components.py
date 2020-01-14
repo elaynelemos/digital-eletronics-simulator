@@ -80,10 +80,7 @@ class Entry(Element):
     # returns True if both coords are valid.
     def setCoords(self, coords: Coords) -> bool:
         self.__coords = coords
-        if self.__coords.getX() < 0 or self.__coords.getY() < 0:
-            return False
-        else:
-            return True
+        return True
 
     def setRotation(self, sense=False):
         self.__orientation = self.__orientation + (1 if sense else -1)
@@ -122,7 +119,7 @@ class Entry(Element):
 
         # bord
         COLOR_STROKE.apply()
-        glLineWidth(STROKE_WIDTH)
+        #glLineWidth(STROKE_WIDTH)
         glBegin(GL_LINE_LOOP)
         rect_around(c, 1/4*self.__size, p=3-self.__orientation)
         d.apply()
@@ -198,10 +195,7 @@ class Checker(Element):
     # returns True if both coords are valid.
     def setCoords(self, coords: Coords) -> bool:
         self.__coords = coords
-        if self.__coords.getX() < 0 or self.__coords.getY() < 0:
-            return False
-        else:
-            return True
+        return True
 
     def setRotation(self, sense=False):
         self.__orientation = self.__orientation + (1 if sense else -1)
@@ -213,7 +207,6 @@ class Checker(Element):
         return self
 
     def draw(self):
-
         # line
         c = line_orientation(
             self.getCoords(), self.__orientation, a=self.__size*2/3, l=True)
@@ -232,7 +225,7 @@ class Checker(Element):
 
         # bord
         COLOR_STROKE.apply()
-        glLineWidth(STROKE_WIDTH)
+        #glLineWidth(STROKE_WIDTH)
         glBegin(GL_LINE_LOOP)
         rect_around(c, 1/3*self.__size, p=3-self.__orientation)
         glEnd()
@@ -260,7 +253,7 @@ class Checker(Element):
 
 
 class Display(Element):
-    __checks = [None]*4
+    __checks:List[Checks] = None
     __coords: Coords = None
     __fill: Color = Color()
     __ligh_on: Color = Color(r=1.0)
@@ -275,15 +268,17 @@ class Display(Element):
 
     def __updateCoords(self):
         c = Coords(0.0, 0.0)
+        print("entrei")
+        self.__checks = []
         for i in range(4):
-            self.__checks[i] = Checker()
+            self.__checks.append(Checker())
             # definindo a rotação do componente
             if self.__orientation % 2 == 0:  # LR or RL
-                self.__checks[i].setCoords(c.sum(Coords(self.__size*5/8, -self.__size*3/8 + i*self.__size*1/4)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*5/8, -self.__size*3/8 + i*self.__size*1/4)))
+                self.__checks[i].setCoords(c.sum(Coords(self.__size*1/2, -self.__size*3/8 + i*self.__size*1/4)) if int(
+                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/2, -self.__size*3/8 + i*self.__size*1/4)))
             else:                       # UD or DU
-                self.__checks[i].setCoords(c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, self.__size*5/8)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, -self.__size*5/8)))
+                self.__checks[i].setCoords(c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, self.__size*1/2)) if int(
+                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*3/8 + i*self.__size*1/4, -self.__size*1/2)))
 
     def getCheck(self, i: int):
         if(i < 4 and i >= 0):
@@ -301,10 +296,7 @@ class Display(Element):
     # returns True if both coords are valid.
     def setCoords(self, coords: Coords) -> bool:
         self.__coords = coords
-        if self.__coords.getX() < 0 or self.__coords.getY() < 0:
-            return False
-        else:
-            return True
+        return True
 
     def getCoords(self) -> Coords:
         return self.__coords
@@ -315,16 +307,24 @@ class Display(Element):
         self.__orientation = 3 if self.__orientation < 0 else self.__orientation
 
         self.__updateCoords()
+        return self
 
     def setTranslation(self, coords=Coords):
         c = line_orientation(
-            self.getCoords(), self.__orientation, a=self.__size*5/8)
+            self.getCoords(), self.__orientation, a=self.__size*1/2, l=False)
         c = line_orientation(c, (self.__orientation+1) % 4, a=self.__size*3/8)
         #c = c.mul(-1)
         self.setCoords(coords.sum(c))
         return self
 
+    def rectCenter(self):
+        return self.__coords.sum(line_orientation(
+            self.getCoords(), self.__orientation, a=self.__size*1/8, l=False))
+
     def draw(self):
+        print(self.__coords)
+        print(self.rectCenter())
+
         v = 0
         for i in range(4):
             v += (2**i)*(1 if self.__checks[i].getValue() else 0)
@@ -332,19 +332,20 @@ class Display(Element):
         # Rect
 
         self.__fill.apply()
+
         glBegin(GL_POLYGON)
-        rect_around(self.__coords, (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size *
+        rect_around(self.rectCenter(), (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size *
                                     1/2), (self.__size*1/2 if self.__orientation % 2 == 0 else self.__size*3/8))
         glEnd()
 
         # OFF Digit
         self.__ligh_off.apply()
-        digit_around(self.__coords, self.__size *
+        digit_around(self.rectCenter(), self.__size *
                      (0.9 if self.__orientation % 2 == 0 else 0.75)/3, 8, p=True)
 
         # ON Digit
         self.__ligh_on.apply()
-        digit_around(self.__coords, self.__size *
+        digit_around(self.rectCenter(), self.__size *
                      (0.9 if self.__orientation % 2 == 0 else 0.75)/3, v)
 
         # set center
@@ -354,7 +355,7 @@ class Display(Element):
 
         for ckeck in self.__checks:
             point = line_orientation(
-                ckeck.getCoords(), self.__orientation, l=True)
+                ckeck.getCoords(), self.__orientation, l=True,a = self.__size/4)
             if ckeck.getValue() == True:
                 COLOR_TRUE.apply()
             elif ckeck.getValue() == False:
@@ -371,7 +372,7 @@ class Display(Element):
         return False
 
     def isInside(self, coords) -> bool:
-        return coords.in_around(self.getCoords(), (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size/2), b=(self.__size/2 if self.__orientation % 2 == 0 else self.__size*3/8))
+        return coords.in_around(self.rectCenter(), (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size/2), b=(self.__size/2 if self.__orientation % 2 == 0 else self.__size*3/8))
 
 
 class KeyBoard(Element):
@@ -432,10 +433,7 @@ class KeyBoard(Element):
     # returns True if both coords are valid.
     def setCoords(self, coords: Coords) -> bool:
         self.__coords = coords
-        if self.__coords.getX() < 0 or self.__coords.getY() < 0:
-            return False
-        else:
-            return True
+        return True
 
     def __setCenter(self):
         self.__coords.glTranslate()
@@ -447,6 +445,7 @@ class KeyBoard(Element):
         self.__orientation = 3 if self.__orientation < 0 else self.__orientation
 
         self.__updateCoords()
+        return self
 
     def setTranslation(self, coords=Coords):
         c = line_orientation(
