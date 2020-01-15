@@ -73,7 +73,7 @@ def showScreen():
     #window.draw()
     #wireManager.draw()
 
-    print("showScreen")
+    #print("showScreen")
     
     windowGlobal.draw()
     
@@ -112,12 +112,14 @@ def keyboard_special(key, x, y):
 
 def mouse(button, state, x, y):
     # Assign functions to keys of mouse
-    if windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y)):
-        showScreen()
+    #if windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y)):
+    windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y))   
+    showScreen()
    
 def mouseWalkingNotPressed(x,y):
-    if windowGlobal.event(EVENT_TYPE_MOUSE_WALKING_NOT_PRESS, None, None, None, coords=convert(x, y)):
-        showScreen()
+    #if windowGlobal.event(EVENT_TYPE_MOUSE_WALKING_NOT_PRESS, None, None, None, coords=convert(x, y)):
+    windowGlobal.event(EVENT_TYPE_MOUSE_WALKING_NOT_PRESS, None, None, None, coords=convert(x, y))    
+    showScreen()
 
 def windowResizeHandler(width, height):
     screen['width'] = width
@@ -143,6 +145,7 @@ wind = glutCreateWindow("Hello World")
 glutDisplayFunc(showScreen)
 #glutIdleFunc(showScreen)
 glutReshapeFunc(windowResizeHandler)
+windowResizeHandler(500, 500)
 
 glutPassiveMotionFunc(mouseWalkingNotPressed)
 glutKeyboardFunc(keyboard_ascii)
