@@ -755,6 +755,19 @@ class AndGate(Gate):
             return entry.setValue(None)
         return entry.setValue(self.getIn(0).getValue() and self.getIn(1).getValue())
 
+    def listPoints(self):
+        ret = []
+        ret.append(Coords(self.getSize()*1/10, self.getSize()/5))
+        ret.append(Coords(self.getSize()*9/40, self.getSize()*3/20))
+        ret.append(Coords(self.getSize()*11/40, self.getSize()/10))
+        ret.append(Coords(self.getSize()*3/10, 0))
+        ret.append(Coords(self.getSize()*11/40, -self.getSize()/10))
+        ret.append(Coords(self.getSize()*9/40, -self.getSize()*3/20))
+        ret.append(Coords(self.getSize()*1/10, -self.getSize()/5))
+        ret.append(Coords(-self.getSize()*3/10, -self.getSize()/5))
+        ret.append(Coords(-self.getSize()*3/10, self.getSize()/5))
+        return ret
+
     def draw(self):
         super().draw()
 
@@ -762,38 +775,20 @@ class AndGate(Gate):
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         self.setCenter()
-
+        l = self.listPoints()
         # Polygon
         self.getFill().apply()
         glBegin(GL_POLYGON)
-        Coords(self.getSize()*1/10, self.getSize()/5).apply()
-        Coords(self.getSize()*9/40, self.getSize()*3/20).apply()
-        Coords(self.getSize()*11/40, self.getSize()/10).apply()
-        Coords(self.getSize()*3/10, 0).apply()
-        Coords(self.getSize()*11/40, -self.getSize()/10).apply()
-        Coords(self.getSize()*9/40, -self.getSize()*3/20).apply()
-        Coords(self.getSize()*1/10, -self.getSize()/5).apply()
-
-        Coords(-self.getSize()*3/10, -self.getSize()/5).apply()
-        Coords(-self.getSize()*3/10, self.getSize()/5).apply()
-
+        for i in l:
+            i.apply()
         glEnd()
 
         # bord
         # Polygon
         COLOR_STROKE.apply()
         glBegin(GL_LINE_LOOP)
-        Coords(self.getSize()*1/10, self.getSize()/5).apply()
-        Coords(self.getSize()*9/40, self.getSize()*3/20).apply()
-        Coords(self.getSize()*11/40, self.getSize()/10).apply()
-        Coords(self.getSize()*3/10, 0).apply()
-        Coords(self.getSize()*11/40, -self.getSize()/10).apply()
-        Coords(self.getSize()*9/40, -self.getSize()*3/20).apply()
-        Coords(self.getSize()*1/10, -self.getSize()/5).apply()
-
-        Coords(-self.getSize()*3/10, -self.getSize()/5).apply()
-        Coords(-self.getSize()*3/10, self.getSize()/5).apply()
-
+        for i in l:
+            i.apply()
         glEnd()
 
         glPopMatrix()
@@ -801,6 +796,19 @@ class AndGate(Gate):
         return self
 
     def isInside(self, coords) -> bool:
+        ret = False
+        coords = self.normalize(coords)
+        cs = self.listPoints()
+        c1 = cs[0]
+        del(cs[0])
+        for i in range(len(cs)-1):
+            ret = ret or is_inside_triangle(coords,[c1,cs[i],cs[i+1]])
+        
+        return ret
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        #if(event_type == EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
+        #    print("Clicou dentro")
         return False
 
 
@@ -818,9 +826,6 @@ class NandGate(AndGate):
         point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
 
-    def isInside(self, coords) -> bool:
-        return False
-
 
 class OrGate(Gate):
 
@@ -830,6 +835,22 @@ class OrGate(Gate):
             return entry.setValue(None)
         return entry.setValue(self.getIn(0).getValue() or self.getIn(1).getValue())
 
+    def listPoints(self):
+        ret = []
+        ret.append(Coords(self.getSize()*2/10, -self.getSize()/10))
+        ret.append(Coords(self.getSize()*1/10, -self.getSize()*3/20))
+        ret.append(Coords(0, -self.getSize()*0.19))
+        ret.append(Coords(-self.getSize()*0.3, -self.getSize()*0.2))
+        ret.append(Coords(-self.getSize()*0.22, -self.getSize()*0.1))
+        ret.append(Coords(-self.getSize()*0.2, 0))
+        ret.append(Coords(-self.getSize()*0.22, +self.getSize()*0.1))
+        ret.append(Coords(-self.getSize()*0.3, +self.getSize()*0.2))
+        ret.append(Coords(0, self.getSize()*0.19))
+        ret.append(Coords(self.getSize()*1/10, self.getSize()*3/20))
+        ret.append(Coords(self.getSize()*2/10, self.getSize()/10))
+        ret.append(Coords(self.getSize()*3/10, 0))
+        return ret
+
     def draw(self):
         super().draw()
 
@@ -837,51 +858,43 @@ class OrGate(Gate):
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         self.setCenter()
-
+        l = self.listPoints()
         # Polygon
         self.getFill().apply()
         glBegin(GL_POLYGON)
-        Coords(0, self.getSize()*0.19).apply()
-        Coords(self.getSize()*1/10, self.getSize()*3/20).apply()
-        Coords(self.getSize()*2/10, self.getSize()/10).apply()
-        Coords(self.getSize()*3/10, 0).apply()
-        Coords(self.getSize()*2/10, -self.getSize()/10).apply()
-        Coords(self.getSize()*1/10, -self.getSize()*3/20).apply()
-        Coords(0, -self.getSize()*0.19).apply()
-
-        Coords(-self.getSize()*0.3, -self.getSize()*0.2).apply()
-        Coords(-self.getSize()*0.22, -self.getSize()*0.1).apply()
-        Coords(-self.getSize()*0.2, 0).apply()
-        Coords(-self.getSize()*0.22, +self.getSize()*0.1).apply()
-        Coords(-self.getSize()*0.3, +self.getSize()*0.2).apply()
-
+        for i in l:
+            i.apply()
         glEnd()
 
         # bord
         # Polygon
         COLOR_STROKE.apply()
         glBegin(GL_LINE_LOOP)
-        Coords(0, self.getSize()*0.19).apply()
-        Coords(self.getSize()*1/10, self.getSize()*3/20).apply()
-        Coords(self.getSize()*2/10, self.getSize()/10).apply()
-        Coords(self.getSize()*3/10, 0).apply()
-        Coords(self.getSize()*2/10, -self.getSize()/10).apply()
-        Coords(self.getSize()*1/10, -self.getSize()*3/20).apply()
-        Coords(0, -self.getSize()*0.19).apply()
-
-        Coords(-self.getSize()*0.3, -self.getSize()*0.2).apply()
-        Coords(-self.getSize()*0.22, -self.getSize()*0.1).apply()
-        Coords(-self.getSize()*0.2, 0).apply()
-        Coords(-self.getSize()*0.22, +self.getSize()*0.1).apply()
-        Coords(-self.getSize()*0.3, +self.getSize()*0.2).apply()
-
+        for i in l:
+            i.apply()
         glEnd()
+
+        
+
 
         glPopMatrix()
 
         return self
 
     def isInside(self, coords) -> bool:
+        ret = False
+        coords = self.normalize(coords)
+        cs = self.listPoints()
+        c1 = cs[0]
+        del(cs[0])
+        for i in range(len(cs)-1):
+            ret = ret or is_inside_triangle(coords,[c1,cs[i],cs[i+1]])
+        
+        return ret
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        #if(event_type == EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
+        #    print("Clicou dentro")
         return False
 
 
@@ -899,9 +912,6 @@ class NorGate(OrGate):
         point = self.getD()
         point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
-
-    def isInside(self, coords) -> bool:
-        return False
 
 
 class XorGate(OrGate):
@@ -936,9 +946,6 @@ class XorGate(OrGate):
 
         return self
 
-    def isInside(self, coords) -> bool:
-        return False
-
 
 class XnorGate(XorGate):
 
@@ -953,9 +960,6 @@ class XnorGate(XorGate):
         point = self.getD()
         point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
-
-    def isInside(self, coords) -> bool:
-        return False
 
 # Wire: Represents the connector of the logic circuit. It's defined as a list of unique
 #      Coords. Once connected to an logic component carries its value from start to end points.

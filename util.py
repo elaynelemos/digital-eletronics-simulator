@@ -423,7 +423,7 @@ def rect_top_bottom(c: Coords, x1: Coords, x2: Coords) -> int:
     return 1 if c.getY() > y else (-1 if c.getY() < y else 0)
 
 
-def is_inside_triangle(c: Coords, l: [Coords]) -> bool:
+def is_inside_triangle(c: Coords, l: [Coords],p=False) -> bool:
     if len(l) != 3:
         print("Coordenadas Inválidas (Não é um triangulo)")
         return False
@@ -439,8 +439,13 @@ def is_inside_triangle(c: Coords, l: [Coords]) -> bool:
     x1 = x0
     for i in l:
         x1 = i if not i.equals(x0) and not i.equals(x2) else x1
-    up = x1.getY() > x0.getY() and x1.getY() > x2.getY()
+    up = rect_top_bottom(x1,x0,x2)>0
 
+    if p:
+        print(x0)
+        print(x1)
+        print(x2)
+        print(up)  
     # identificar intevalos em Y em função de X
     if(c.getX() >= x0.getX() and c.getX() <= x1.getX()):
         if(up):
