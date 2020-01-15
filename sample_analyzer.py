@@ -91,7 +91,7 @@ logicAnalyzer = LogicAnalyzer(entries, wires, checkers)
 #logicAnalyzer.defineValues()
 
 #simulando o analyzer
-
+"""
 #primeiro caso
 for i in entries:
     if i.getCoords().equals(checker_1.getCoords()):
@@ -117,6 +117,7 @@ for i in entries:
 # a implementação do mesmo estaticamente não ajuda em nada o entendimento
 # e a implementação iterativa deixaria de ser o exemplo de funcionamento 
 #   se tornando quase a própria implementação
+"""
 
 # valores atualizados
 """

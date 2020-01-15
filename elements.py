@@ -21,6 +21,7 @@ class WireManager(Element):
     __endWire: Coords = None            #Wire end coordinate
     __drawWire: bool = False            #Determine if the user want draw a wire
     __typeWire: int = None              #Determine type wire
+    
     def __init__(self):
         super().__init__()
         self.dotsWires = []
@@ -40,6 +41,7 @@ class WireManager(Element):
         self.__drawWire = yes
     def getDrawWire(self)->bool:
         return self.__drawWire
+    
 
     def validPoint(self,x: float)->int:
       
@@ -104,29 +106,30 @@ class WireManager(Element):
             self.drawWireCurrent()
 
 
-    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, window =None) -> bool:
         
-        if event_type == EVENT_TYPE_MOUSE:
+        if window is not None and window.getDragComponent()== False:
+            if event_type == EVENT_TYPE_MOUSE:
           
-            if button == GLUT_LEFT_BUTTON and state == GLUT_UP:
-                self.__drawWire = True
-                self.setStartWire(coords)
+                if button == GLUT_LEFT_BUTTON and state == GLUT_UP:
+                    self.__drawWire = True
+                    self.setStartWire(coords)
 
-            if button == GLUT_RIGHT_BUTTON and state == GLUT_UP:
-                self.__drawWire = False
-                self.addDotsToWire()
+                if button == GLUT_RIGHT_BUTTON and state == GLUT_UP:
+                    self.__drawWire = False
+                    self.addDotsToWire()
      
-        if event_type == EVENT_TYPE_MOUSE_WALKING_NOT_PRESS:
-                if self.__drawWire == True:
-                   self.setEndWire(coords)
+            if event_type == EVENT_TYPE_MOUSE_WALKING_NOT_PRESS:
+                    if self.__drawWire == True:
+                        self.setEndWire(coords)
         
         return None
 
 #This class is responsible for draw the elements like gaters and entrys and grid 
 class Window(Element):
     factor: float = 0.1
-   
-
+    __dragComponent: bool = False
+    __currentComponentDragged: int = 0 
     def __init__(self):
         super().__init__()
         self.center = Coords(0, 0)
@@ -135,7 +138,11 @@ class Window(Element):
         self.elements = []
         self.windowStartPosition = Coords(0,0)
       
-       
+    
+    def setDragComponent(self, drag):
+        self.__dragComponent = drag
+    def getDragComponent(self):
+        return self.__dragComponent
     #Set the window position in the current coordinates plane
     def setWindowStartPosition(self, windowStartPosition: Coords):
         self.windowStartPosition = windowStartPosition
@@ -216,7 +223,7 @@ class Window(Element):
         return self
        
     def adjustCenter(self):
-        self.setCenter(Coords((self.size.getX()/2)+self.windowStartPosition.getX(), (self.size.getY()/2)+self.windowStartPosition.getY()))
+        self.setCenter(Coords(self.validPoint((self.size.getX()/2)+self.windowStartPosition.getX()), self.validPoint((self.size.getY()/2)+self.windowStartPosition.getY())))
        
     def updateCoordsElementsWindows(self, translate: Coords):
          for i in self.elements:
@@ -225,9 +232,25 @@ class Window(Element):
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         
         
-        for i in range(len(self.elements)):
-            if self.elements[len(self.elements)-i-1].event(event_type, key=key, button=button, state=state, coords=coords):
-                return True
+        #for i in range(len(self.elements)):
+           # if self.elements[len(self.elements)-i-1].event(event_type, key=key, button=button, state=state, coords=coords):
+            #    return True
+
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP:
+           
+            if len(self.elements)> 0:
+                if self.__dragComponent == False:
+                    for i in range(len(self.elements)):
+                        if self.elements[i].isInside(coords) == True:
+                            self.__currentComponentDragged = i
+                            self.__dragComponent = True
+                else:
+                    self.__dragComponent = False
+            
+        if event_type == EVENT_TYPE_MOUSE_WALKING_NOT_PRESS:
+            if self.__dragComponent == True:
+                self.elements[ self.__currentComponentDragged].setCoords(Coords(self.validPoint(coords.getX()),self.validPoint(coords.getY())))
+
         return False
 
     def isInside(self, coords) -> bool:
@@ -442,7 +465,7 @@ class Panel(Element):
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         
         if self.isInside(coords.getX(), coords.getY()) == True:
-            self.__wireManager.event(event_type, key, button, state, coords)
+            self.__wireManager.event(event_type, key, button, state, coords,self.__window)
       
         self.__window.event( event_type, key, button, state, coords)
         return None
