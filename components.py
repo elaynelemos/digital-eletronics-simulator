@@ -737,7 +737,10 @@ class NotGate(Gate):
         return self
 
     def isInside(self, coords) -> bool:
-        return is_inside_triangle(coords, [Coords(self.getSize()*3/10, 0.0), Coords(-self.getSize()*3/10, -self.getSize()/5), Coords(-self.getSize()*3/10, self.getSize()/5)])
+        coords = self.normalize(coords)
+        ret = is_inside_triangle(coords, [Coords(self.getSize()*3/10, 0.0), Coords(-self.getSize()*3/10, -self.getSize()/5), Coords(-self.getSize()*3/10, self.getSize()/5)])
+        print(ret)
+        return ret
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         if(event_type == EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
