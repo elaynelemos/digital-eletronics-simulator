@@ -649,15 +649,15 @@ class Gate(Element):
         coords = coords.sum(self.getCenter().mul(-1))
         if self.__orientation == 1:
             temp = coords.getY()
-            coords.setY(coords.getX())
-            coords.setX(-temp)
+            coords.setY(-coords.getX())
+            coords.setX(temp)
         if self.__orientation == 2:
             coords.setX(-coords.getX())
             coords.setY(-coords.getY())
         if self.__orientation == 3:
             temp = coords.getY()
-            coords.setY(-coords.getX())
-            coords.setX(temp)
+            coords.setY(coords.getX())
+            coords.setX(-temp)
         return coords
 
     def getD(self):
