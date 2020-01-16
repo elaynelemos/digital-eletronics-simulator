@@ -142,8 +142,9 @@ class Entry(Element):
             digit_around(c, 1/4*0.6*self.__size, -1)
 
         # name
+        Color().apply()
         if(n):
-            text_right(self.getName(),c.sum(Coords(1/4*self.__size,-1/4*self.__size)))
+            text_right(self.getName(),c.sum(Coords(0,5/12*self.__size*(-1 if self.__orientation != ORIENTATION_UD else 1))))
 
         # self.getCoords().draw()
 
@@ -260,9 +261,9 @@ class Checker(Element):
             digit_around(c, 1/4*0.6*self.__size, -1)
 
         # name
-
-        if n:
-            text_right(self.getName(),c.sum(Coords(1/6*self.__size,-5/12*self.__size)))
+        Color().apply()
+        if(n):
+            text_right(self.getName(),c.sum(Coords(0,5/12*self.__size*(-1 if self.__orientation != ORIENTATION_UD else 1))))
 
         # self.getCoords().draw()
 
@@ -392,6 +393,16 @@ class Display(Element):
             rect_polygon_around(point, self.__size/16)
 
         glPopMatrix()
+        c = self.rectCenter()
+        # name
+        Color().apply()
+        if(n):
+            if self.__orientation%2 == 0:
+                text_right(self.getName(),c.sum(Coords(0,-5/8*self.__size)))
+            elif self.__orientation == ORIENTATION_UD:
+                text_right(self.getName(),c.sum(Coords(0,-5/8*self.__size)))
+            elif self.__orientation == ORIENTATION_DU:
+                text_right(self.getName(),c.sum(Coords(0,5/8*self.__size)))
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         # if(event_type==EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
@@ -545,6 +556,16 @@ class KeyBoard(Element):
             else:
                 COLOR_NONE.apply()
             rect_polygon_around(point, self.__size/16)
+        c = self.rectCenter()
+        # name
+        Color().apply()
+        if(n):
+            if self.__orientation%2 == 0:
+                text_right(self.getName(),c.sum(Coords(0,-5/8*self.__size)))
+            elif self.__orientation == ORIENTATION_UD:
+                text_right(self.getName(),c.sum(Coords(0,-5/8*self.__size)))
+            elif self.__orientation == ORIENTATION_DU:
+                text_right(self.getName(),c.sum(Coords(0,5/8*self.__size)))
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         if(event_type == EVENT_TYPE_MOUSE and state == GLUT_DOWN and self.isInside(coords)):
@@ -691,6 +712,15 @@ class Gate(Element):
                 self.getCoords()), (self.__orientation+2) % 4, self.__size/2)
         line_orientation(self.__out.getCoords().sum(
             self.getCoords()), self.__orientation, self.__size/5)
+
+        # name
+        Color().apply()
+        c = self.getCenter()
+        if(n):
+            if self.__orientation%2 == 0:
+                text_right(self.getName(),c.sum(Coords(0,-self.__size*3/10)))
+            else:
+                text_right(self.getName(),c.sum(Coords(self.__size*4/10,0)))
 
         return self
 
