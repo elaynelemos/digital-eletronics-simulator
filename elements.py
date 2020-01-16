@@ -211,11 +211,11 @@ class Window(Element):
         
         checks.extend(self.checks)
         entrys.extend(self.entrys)
-        self.logicAnalyzer = LogicAnalyzer(entrys, self.wires, checks)
+        self.__logicAnalyzer = LogicAnalyzer(entrys, self.wires, checks)
         self.wires.clear()
 
     def deactivateSimulation(self):
-        self.logicAnalyzer = None
+        self.__logicAnalyzer = None
         self.wires.clear()
         print("sim")
 
@@ -271,8 +271,9 @@ class Window(Element):
             return int(valor)
 
     def draw(self):
-        #if self.logicAnalyzer is not None:
-         #   self.logicAnalyzer.apply()
+        if self.__logicAnalyzer is not None:
+            self.__logicAnalyzer.analyze()
+         # self.logicAnalyzer.apply()
         #Draw the windows grid
         Color(0.0,0.0,0.0).apply()
         glPointSize(1.0)
@@ -310,10 +311,13 @@ class Window(Element):
             self.wires.append(l)
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        print('Logic',self.__logicAnalyzer)
         
+      
         if self.__logicAnalyzer is not None:
+            print("sim")
             for i in range(len(self.elements)):
-                self.elements[len(self.elements)-i-1].event(event_type, key, button, state, coords)
+                self.elements[len(self.elements)-i-1].event(EVENT_TYPE_MOUSE, key, button, state, coords)
             #    return True
         else:
             if event_type == EVENT_TYPE_MOUSE and button == GLUT_LEFT_BUTTON and state == GLUT_UP:
@@ -475,8 +479,10 @@ class PainelComponents(Element):
 
         if self.isInside(coord.getX(), coord.getY()) == True:
             component = self.componentChoosed(coord.getY())
+          
             if component == ENTRY:
-                return Entry(elementsPositionStart)
+                return Entry(elementsPositionStart).setValue(True)
+                
             elif component == CHECKER:
                 return Checker(elementsPositionStart)
             elif component == DISPLAY:
@@ -851,7 +857,8 @@ class IconStart(Icon):
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
-        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP:
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP and self.isInside(coords.getX(),coords.getY())==True:
+            
             windowsBar.getPanel().getWindow().prepareWireForSimulation(windowsBar.getPanel().getWireManager())
             windowsBar.getPanel().getWindow().ativateSimulation()
             print("Start Simulation: ")
@@ -892,9 +899,10 @@ class IconStop(Icon):
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
-        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP:
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP and self.isInside(coords.getX(),coords.getY())== True:
             windowsBar.getPanel().getWindow().deactivateSimulation()
             print("Stop Simulation: ")
+        pass
 class IconPrevious(Icon):
 
     def __init__(self, coord: Coords(0, 0)):

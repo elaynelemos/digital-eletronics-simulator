@@ -58,7 +58,6 @@ class Entry(Element):
                 raise ValueError(
                     "ValueError: Logic value expected to entry. You entered a(n): ", type(value))
         except ValueError as ve:
-            print(ve)
             return self
         else:
             self.__value = value
@@ -142,7 +141,9 @@ class Entry(Element):
         return self
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        print("esta invertendo")
         if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP and self.isInside(coords):
+         
             self.toogleV()
             return True
         return False
