@@ -35,13 +35,14 @@ class Entry(Element):
     # the attributes (private) only can be reached by getters and setters.
     __value: bool = None
     __coords: Coords = None
+    __tech_coords: Coords = None
     __orientation = ORIENTATION_LR
     __size = POINT_SPACE*4
     __gate = None
     __keyboard = None
     id = 0
     # the constructor of Entry receives a logic value and the Coords where the entry should be placed.
-    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4, gate=None,keyboard = None):
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4, gate=None,keyboard = None,tech = None):
         #super().__init__()
         self.setName("E"+str(Entry.id))
         Entry.id+=1
@@ -49,6 +50,7 @@ class Entry(Element):
         self.setCoords(coords)
         self.__gate = gate
         self.__keyboard = keyboard
+        self.__tech_coords = tech if tech is not None else coords
 
     def getValue(self) -> bool:
         return self.__value
@@ -87,6 +89,12 @@ class Entry(Element):
         self.__orientation = self.__orientation + (1 if sense else -1)
         self.__orientation = 0 if self.__orientation > 3 else self.__orientation
         self.__orientation = 3 if self.__orientation < 0 else self.__orientation
+
+    def getTechCoords(self)->Coords:
+        return self.__tech_coords
+    def setTechCoords(self,coords:Coords):
+        self.__tech_coords = coords
+        return self
 
     def setTranslation(self, coords=Coords):
         self.setCoords(coords)
@@ -145,7 +153,8 @@ class Entry(Element):
         if(n):
             text_right(self.getName(),c.sum(Coords(0,5/12*self.__size*(-1 if self.__orientation != ORIENTATION_UD else 1))))
 
-        # self.getCoords().draw()
+
+        rect_polygon_around(self.getCoords(),self.__size*0.2/4)
 
         return self
 
@@ -176,13 +185,14 @@ class Checker(Element):
     __value: bool = None
     __coords: Coords = None
     __orientation = ORIENTATION_RL
+    __tech_coords: Coords = None
     __size = POINT_SPACE*3
     __checked = False
     __display = None
     __gate = None
     id = 0
     # the constructor of Entry receives a logic value and the Coords where the entry should be placed.
-    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*3, display = None, gate = None):
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*3, display = None, gate = None, tech = None):
         #super().__init__()
         self.setName("C"+str(Checker.id))
         Checker.id+=1
@@ -190,6 +200,7 @@ class Checker(Element):
         self.setCoords(coords)
         self.__display = display
         self.__gate = gate
+        self.__tech_coords = tech if tech is not None else coords
 
     def getValue(self) -> bool:
         return self.__value
@@ -219,6 +230,12 @@ class Checker(Element):
     def setCoords(self, coords: Coords) -> bool:
         self.__coords = coords
         return True
+
+    def getTechCoords(self)->Coords:
+        return self.__tech_coords
+    def setTechCoords(self,coords:Coords):
+        self.__tech_coords = coords
+        return self
 
     def setRotation(self, sense=False):
         self.__orientation = self.__orientation + (1 if sense else -1)
@@ -267,6 +284,7 @@ class Checker(Element):
             text_right(self.getName(),c.sum(Coords(0,5/12*self.__size*(-1 if self.__orientation != ORIENTATION_UD else 1))))
 
         # self.getCoords().draw()
+        rect_polygon_around(self.getCoords(),self.__size*0.2/3)
 
         return self
 
@@ -291,26 +309,31 @@ class Display(Element):
     __ligh_off: Color = Color(r=0.2)
     __orientation = ORIENTATION_RL
     __size = POINT_SPACE*4
+    
     id = 0
     def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4):
         self.setName("D"+str(Display.id))
         Display.id+=1
         self.setCoords(coords)
         self.__size = size
+        
+        self.__checks = []
+        for i in range(4):
+            self.__checks.append(Checker(display = self))
+
         self.__updateCoords()
 
     def __updateCoords(self):
         c = Coords(0.0, 0.0)
-        self.__checks = []
+        
         for i in range(4):
-            self.__checks.append(Checker(display = self))
             # definindo a rotação do componente
-            if self.__orientation % 2 == 0:  # LR or RL
-                self.__checks[i].setCoords(c.sum(Coords(self.__size*1/2, self.__size*1/4 - i*self.__size*1/4)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/2, -self.__size*1/4 + i*self.__size*1/4)))
-            else:                       # UD or DU
-                self.__checks[i].setCoords(c.sum(Coords(-self.__size*1/4 + i*self.__size*1/4, self.__size*1/2)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(self.__size*1/4 - i*self.__size*1/4, -self.__size*1/2)))
+            c = Coords(0.0, 0.0)
+            c = line_orientation(c,self.__orientation,-self.__size*1/2, l=False)
+            c = line_orientation(c,(self.__orientation+1)%4,-self.__size*1/4+self.__size*i/4, l=False)
+
+            self.__checks[i].setCoords(c)
+            self.__checks[i].setTechCoords(c.sum(self.getCoords()))
 
     def getCheck(self, i: int):
         if(i < 4 and i >= 0):
@@ -318,6 +341,7 @@ class Display(Element):
         return None
 
     def getChecks(self):
+        self.__updateCoords()
         return self.__checks
 
     def setCheck(self, i: int, v: bool):
@@ -385,6 +409,7 @@ class Display(Element):
         for ckeck in self.__checks:
             point = line_orientation(
                 ckeck.getCoords(), self.__orientation, l=True, a=self.__size/4)
+            rect_polygon_around(ckeck.getCoords(),self.__size*0.2/4)
             if ckeck.getValue() == True:
                 COLOR_TRUE.apply()
             elif ckeck.getValue() == False:
@@ -401,7 +426,7 @@ class Display(Element):
             if self.__orientation%2 == 0:
                 text_right(self.getName(),c.sum(Coords(0,-5/8*self.__size)))
             elif self.__orientation == ORIENTATION_UD:
-                text_right(self.getName(),c.sum(Coords(0,-5/8*self.__size)))
+                text_right(self.getName(),c.sum(Coords(0,-4/8*self.__size)))
             elif self.__orientation == ORIENTATION_DU:
                 text_right(self.getName(),c.sum(Coords(0,5/8*self.__size)))
 
@@ -428,20 +453,22 @@ class KeyBoard(Element):
         KeyBoard.id+=1
         self.setCoords(coords)
         self.__size = size
-        self.__updateCoords()
 
-    def __updateCoords(self):
-        c = Coords(0.0, 0.0)
         self.__entries = []
         for i in range(4):
             self.__entries.append(Entry(keyboard = self))
-            # definindo a rotação do componente
-            if self.__orientation % 2 == 0:  # LR or RL
-                self.__entries[i].setCoords(c.sum(Coords(self.__size*1/2, -self.__size*1/4 + i*self.__size*1/4)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/2, self.__size*1/4 - i*self.__size*1/4)))
-            else:                       # UD or DU
-                self.__entries[i].setCoords(c.sum(Coords(self.__size*1/4 - i*self.__size*1/4, self.__size*1/2)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/4 + i*self.__size*1/4, -self.__size*1/2)))
+
+        self.__updateCoords()
+
+    def __updateCoords(self):
+        
+        for i in range(4):
+            c = Coords(0.0, 0.0)
+            c = line_orientation(c,self.__orientation,-self.__size*1/2, l=False)
+            c = line_orientation(c,(self.__orientation+1)%4,self.__size*1/4-self.__size*i/4, l=False)
+
+            self.__entries[i].setCoords(c)
+            self.__entries[i].setTechCoords(c.sum(self.getCoords()))
 
     def getEntry(self, i: int):
         if(i < 4 and i >= 0):
@@ -449,6 +476,7 @@ class KeyBoard(Element):
         return None
 
     def getEntries(self):
+        self.__updateCoords()
         return self.__entries
 
     def getCoords(self) -> Coords:
@@ -545,11 +573,11 @@ class KeyBoard(Element):
             Coords(self.__size/4, self.__size/8 * (-1 + i)).apply()
         glEnd()
 
-        glPopMatrix()
+        
 
         for entry in self.__entries:
-            point = line_orientation(entry.getCoords().sum(
-                self.__coords), self.__orientation, self.__size/4)
+            point = line_orientation(entry.getCoords(), self.__orientation, self.__size/4)
+            rect_polygon_around(entry.getCoords(),self.__size*0.2/4)
             if entry.getValue() == True:
                 COLOR_TRUE.apply()
             elif entry.getValue() == False:
@@ -557,6 +585,9 @@ class KeyBoard(Element):
             else:
                 COLOR_NONE.apply()
             rect_polygon_around(point, self.__size/16)
+        
+        glPopMatrix()
+
         c = self.rectCenter()
         # name
         Color().apply()
@@ -564,7 +595,7 @@ class KeyBoard(Element):
             if self.__orientation%2 == 0:
                 text_right(self.getName(),c.sum(Coords(0,-5/8*self.__size)))
             elif self.__orientation == ORIENTATION_UD:
-                text_right(self.getName(),c.sum(Coords(0,-5/8*self.__size)))
+                text_right(self.getName(),c.sum(Coords(0,-4/8*self.__size)))
             elif self.__orientation == ORIENTATION_DU:
                 text_right(self.getName(),c.sum(Coords(0,5/8*self.__size)))
 
