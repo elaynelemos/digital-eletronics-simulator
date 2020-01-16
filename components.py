@@ -83,6 +83,7 @@ class Entry(Element):
     # returns True if both coords are valid.
     def setCoords(self, coords: Coords) -> bool:
         self.__coords = coords
+        self.setTechCoords(coords)
         return True
 
     def setRotation(self, sense=False):
@@ -159,7 +160,6 @@ class Entry(Element):
         return self
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        print("esta invertendo")
         if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP and self.isInside(coords):
          
             self.toogleV()
@@ -229,6 +229,7 @@ class Checker(Element):
     # returns True if both coords are valid.
     def setCoords(self, coords: Coords) -> bool:
         self.__coords = coords
+        self.setTechCoords(coords)
         return True
 
     def getTechCoords(self)->Coords:
@@ -573,11 +574,11 @@ class KeyBoard(Element):
             Coords(self.__size/4, self.__size/8 * (-1 + i)).apply()
         glEnd()
 
-        
+        glPopMatrix()
 
         for entry in self.__entries:
-            point = line_orientation(entry.getCoords(), self.__orientation, self.__size/4)
-            rect_polygon_around(entry.getCoords(),self.__size*0.2/4)
+            point = line_orientation(entry.getCoords().sum(self.getCoords()), self.__orientation, self.__size/4)
+            rect_polygon_around(entry.getCoords().sum(self.getCoords()),self.__size*0.2/4)
             if entry.getValue() == True:
                 COLOR_TRUE.apply()
             elif entry.getValue() == False:
@@ -586,7 +587,7 @@ class KeyBoard(Element):
                 COLOR_NONE.apply()
             rect_polygon_around(point, self.__size/16)
         
-        glPopMatrix()
+        
 
         c = self.rectCenter()
         # name
@@ -608,6 +609,7 @@ class KeyBoard(Element):
         return False
 
     def isInside(self, coords) -> bool:
+        print(coords)
         return coords.in_around(self.rectCenter(), (self.__size*3/8 if self.__orientation % 2 == 0 else self.__size/2), b=(self.__size/2 if self.__orientation % 2 == 0 else self.__size*3/8))
 
 # Gate: Represents the main logic gates (or, and, xor, nor, nand) those must receives a pair of
@@ -627,11 +629,20 @@ class Gate(Element):
 
     # the constructor of Gate receives the gate type, two logic values and the Coords where it
     # should be placed.
-    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*5):
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*5,bin=True):
         self.setCoords(coords)  # position of the gate
         self.setName("G" + str(Gate.id))
         Gate.id += 1
         self.__size = size
+
+
+        self.__out = Entry(gate=self)
+        # If is not a Not Gate, then will have two entries
+        self.__checks = []
+        self.__checks.append(Checker(gate = self))
+        if bin:
+            self.__checks.append(Checker(gate = self))
+
         self.__updateCoords()
 
     def getIn(self, i: int) -> Checker:
@@ -645,11 +656,8 @@ class Gate(Element):
             return None
 
     def getChecks(self):
+        self.__updateCoords()
         return self.__checks
-
-    def resetEntries(self):
-        self.__checks = []
-        self.__out = Entry(gate=self)
 
     def getCoords(self) -> Coords:
         return self.__coords
@@ -677,7 +685,6 @@ class Gate(Element):
     # returns True if both coords are valid.
     def setCoords(self, coords: Coords) -> Gate:
         self.__coords = coords
-        self.__updateCoords()
         return self
 
     def setRotation(self, sense=False):
@@ -694,23 +701,26 @@ class Gate(Element):
         return self
 
     def __updateCoords(self) -> Gate:
-        self.resetEntries()
-
-        # If is not a Not Gate, then will have two entries
-        self.__checks.append(Checker(gate = self))
-        self.__checks.append(Checker(gate = self))
-
         # Configures orientation
-        self.__out.setCoords(line_orientation(
-            self.__coords, (self.__orientation+2) % 4, a=self.__size*2/5, l=False))
-        middle = line_orientation(
-            self.__coords, self.__orientation, a=self.__size*3/5, l=False)
-        self.__checks[1].setCoords(line_orientation(
-            middle, (self.__orientation+1) % 4, a=self.__size/5, l=False))
-        self.__checks[0].setCoords(line_orientation(
-            middle, (self.__orientation+3) % 4, a=self.__size/5, l=False))
+        c = Coords(0.0,0.0)
+        self.__out.setCoords(line_orientation(c, (self.__orientation+2) % 4, a=self.__size*2/5, l=False))
+
+        middle = line_orientation(c, self.__orientation, a=self.__size*3/5, l=False)
+        if len(self.__checks) == 1:
+            self.__checks[0].setCoords(middle)    
+        else:
+            self.__checks[1].setCoords(line_orientation(
+                middle, (self.__orientation+1) % 4, a=self.__size/5, l=False))
+            self.__checks[0].setCoords(line_orientation(
+                middle, (self.__orientation+3) % 4, a=self.__size/5, l=False))
+
+        self.__out.setTechCoords(self.__out.getCoords().sum(self.getCoords()))
+        self.__checks[0].setTechCoords(self.__checks[0].getCoords().sum(self.getCoords()))
+        if len(self.__checks) != 1:
+            self.__checks[1].setTechCoords(self.__checks[1].getCoords().sum(self.getCoords()))
 
     def gateOut(self) -> Entry:
+        self.__updateCoords()
         return self.__out
 
     def getCenter(self):
@@ -741,8 +751,10 @@ class Gate(Element):
     def draw(self,n= True):
         # self.getCoords().draw()
         for check in self.__checks:
-            line_orientation(check.getCoords(), (self.__orientation+2) % 4, self.__size/2)
-        line_orientation(self.__out.getCoords(), self.__orientation, self.__size/5)
+            rect_polygon_around(check.getCoords().sum(self.getCoords()),self.__size*0.2/5)
+            line_orientation(check.getCoords().sum(self.getCoords()), (self.__orientation+2) % 4, self.__size/2)
+        line_orientation(self.__out.getCoords().sum(self.getCoords()), self.__orientation, self.__size/5)
+        rect_polygon_around(self.__out.getCoords().sum(self.getCoords()),self.__size*0.2/5)
 
         # name
         Color().apply()
@@ -761,37 +773,7 @@ class Gate(Element):
 
 class NotGate(Gate):
     def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*5):
-        super().__init__(coords, size=size)
-        self.__updateCoords()
-
-    def __updateCoords(self) -> Gate:
-        self.resetEntries()
-
-        # If is not a Not Gate, then will have two entries
-        self.getChecks().append(Checker(gate = self))
-
-        # Configures orientation
-        self.gateOut().setCoords(line_orientation(self.getCoords(),
-                                                  (self.getOrientation()+2) % 4, a=self.getSize()*2/5, l=False))
-        self.getIn(0).setCoords(line_orientation(self.getCoords(),
-                                                 self.getOrientation(), a=self.getSize()*3/5, l=False))
-
-    def setCoords(self, coords: Coords) -> Gate:
-        super().setCoords(coords)
-        self.__updateCoords()
-        return self
-
-    def setTranslation(self, coords: Coords):
-        c = line_orientation(
-            Coords(0.0,0.0), (self.getOrientation()+2) % 4, a=self.getSize()*2/5)
-        c = c.mul(-1)
-        self.setCoords(coords.sum(c))
-        return self
-
-
-    def setRotation(self, sense=False):
-        super().setRotation(sense=sense)
-        self.__updateCoords()
+        super().__init__(coords, size=size,bin=False)
 
     def gateOut(self) -> Entry:
         entry = super().gateOut()
@@ -827,7 +809,7 @@ class NotGate(Gate):
 
         glPopMatrix()
 
-        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
+        point.sum(self.getCoords()).draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
 
         return self
 
@@ -918,7 +900,7 @@ class NandGate(AndGate):
     def draw(self,n= True):
         super().draw(n=n)
         point = self.getD()
-        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
+        point.sum(self.getCoords()).draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
         return self
 
 
@@ -1005,7 +987,7 @@ class NorGate(OrGate):
     def draw(self,n= True):
         super().draw(n=n)
         point = self.getD()
-        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
+        point.sum(self.getCoords()).draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
         return self
 
 
@@ -1053,7 +1035,7 @@ class XnorGate(XorGate):
     def draw(self,n= True):
         super().draw(n=n)
         point = self.getD()
-        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
+        point.sum(self.getCoords()).draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
         return self
 
 # Wire: Represents the connector of the logic circuit. It's defined as a list of unique

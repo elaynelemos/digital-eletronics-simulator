@@ -287,7 +287,6 @@ class Window(Element):
         self.breakListElements()
         checks = []
         entrys = []
-        wire = []
         
         for i in self.gates:
             checks.extend(i.getChecks())
@@ -298,13 +297,10 @@ class Window(Element):
 
         for i in self.keyboards:
             entrys.extend(i.getEntries())
-
-        for i in self.wires:
-            wire.append(Wire(i))
         
         checks.extend(self.checks)
         entrys.extend(self.entrys)
-        self.__logicAnalyzer = LogicAnalyzer(entrys, wire, checks)
+        self.__logicAnalyzer = LogicAnalyzer(entrys, self.wires, checks)
 
     def deactivateSimulation(self):
         self.__logicAnalyzer = None
@@ -364,7 +360,11 @@ class Window(Element):
 
     def draw(self):
         if self.__logicAnalyzer is not None:
-            self.__logicAnalyzer.analyze()
+            try:
+                self.__logicAnalyzer.analyze()
+            except RuntimeError as re:
+                print(re)
+                self.deactivateSimulation()
          # self.logicAnalyzer.apply()
         #Draw the windows grid
         Color(0.0,0.0,0.0).apply()
@@ -416,7 +416,7 @@ class Window(Element):
         if self.__logicAnalyzer is not None:
             print("sim")
             for i in range(len(self.elements)):
-                if(self.elements[len(self.elements)-i-1].event(event_type, key, button, state, coords)):
+                if(self.elements[len(self.elements)-i-1].event(event_type, key=key, button=button, state=state, coords=coords)):
                     return True
             return False
         else:
@@ -761,7 +761,7 @@ class Panel(Element):
         if event_type == EVENT_TYPE_KEY_ASCII:
             self.__wireManager.event(event_type, key, button, state, coords,self.__window)
 
-        self.__window.event( event_type, key, button, state, coords)
+        self.__window.event( event_type, key=key, button=button, state=state, coords=coords)
         return None
         
         
@@ -1460,7 +1460,7 @@ class WindowsBar(Element):
                 self.addComponentWindow(coords)
        
         if self.__panel is not None:
-            self.__panel.event(event_type, key,button, state, coords)
+            self.__panel.event(event_type, key=key,button=button, state=state, coords=coords)
 
 
 ENTRY = 0
