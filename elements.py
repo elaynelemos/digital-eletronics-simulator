@@ -69,6 +69,7 @@ class WireManager(Element):
         Color(0.0,0.0,0.0).apply()
         glBegin(GL_LINE_STRIP)
 
+
         Coords(self.validPoint(self.__startWire.getX()),self.validPoint(self.__startWire.getY())).apply()
         if self.__typeWire == TYPE_WIRE_Z_INVERT:
             Coords(self.validPoint(self.__startWire.getX()),self.validPoint((self.__endWire.getY() + self.__startWire.getY())/2)).apply()
@@ -78,6 +79,9 @@ class WireManager(Element):
             Coords(self.validPoint((self.__startWire.getX()+self.__endWire.getX())/2),self.validPoint(self.__endWire.getY())).apply()
         Coords(self.validPoint(self.__endWire.getX()),self.validPoint(self.__endWire.getY())).apply()
         glEnd()
+
+        rect_polygon_around(Coords(self.validPoint(self.__startWire.getX()),self.validPoint(self.__startWire.getY())),a=POINT_SPACE*0.2)
+        rect_polygon_around(Coords(self.validPoint(self.__endWire.getX()),self.validPoint(self.__endWire.getY())),a=POINT_SPACE*0.2)
 
     #Take the coordinates of the last wire the user made and add it to the wire list to draw 
     # porsteriomente
@@ -95,6 +99,7 @@ class WireManager(Element):
         
 
     def isInside(self, coords):
+        
         for i in self.elements:
             if i.isInside(coords) == True:
                 return i
@@ -107,10 +112,14 @@ class WireManager(Element):
         for i in self.dotsWires:
 
             Color(0.0,0.0,0.0).apply()
+
             glBegin(GL_LINE_STRIP)
             for j in i:
                j.apply()
             glEnd()
+
+            rect_polygon_around(i[0],a=POINT_SPACE*0.2)
+            rect_polygon_around(i[len(i)-1],a=POINT_SPACE*0.2)
 
     #Draw wire
     def draw(self):
