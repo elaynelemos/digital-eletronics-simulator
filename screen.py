@@ -32,7 +32,8 @@ def init():
     window.elements[1].setTranslation(Coords(50, -50))
 
     window.elements.append(Entry())
-    window.elements[2].setValue(True)
+    window.elements[2]
+    
     window.elements[2].setTranslation(Coords(-20, -20))
 
     window.elements.append(Entry())
@@ -72,13 +73,13 @@ def showScreen():
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    #window.draw()
+    
     #wireManager.draw()
 
     #print("showScreen")
     
     windowGlobal.draw()
-    
+    #window.draw()
     glFlush()
 
 
@@ -91,7 +92,7 @@ def keyboard_ascii(key, x, y):
      #   exit()
     #if window.event(EVENT_TYPE_KEY_ASCII, coords=convert(x, y), key=key):
         #showScreen()
-    print("ism")
+    
     windowGlobal.event(EVENT_TYPE_KEY_ASCII, key, None,None,None)
     showScreen()    
     #windowGlobal.event(EVENT_TYPE_MOUSE, key, None,None,None)
@@ -118,6 +119,8 @@ def keyboard_special(key, x, y):
 def mouse(button, state, x, y):
     # Assign functions to keys of mouse
     #if windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y)):
+    #window.event(EVENT_TYPE_MOUSE, None, button, state, coords=convert(x, y))
+    
     windowGlobal.event(EVENT_TYPE_MOUSE, None, button=button, state=state, coords=convert(x, y))   
     showScreen()
    
