@@ -38,10 +38,12 @@ class Entry(Element):
     __orientation = ORIENTATION_LR
     __size = POINT_SPACE*4
     __gate = None
-
+    id = 0
     # the constructor of Entry receives a logic value and the Coords where the entry should be placed.
     def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4, gate=None):
-        super().__init__()
+        #super().__init__()
+        self.setName("E"+str(Entry.id))
+        Entry.id+=1
         self.__size = size
         self.setCoords(coords)
         self.__gate = gate
@@ -103,7 +105,7 @@ class Entry(Element):
     def getGate(self):
         return self.__gate
 
-    def draw(self):
+    def draw(self, n = True):
         # line
         c = self.__getC()
         d = self.__getD()
@@ -137,6 +139,10 @@ class Entry(Element):
         else:
             digit_around(c, 1/4*0.6*self.__size, -1)
 
+        # name
+        if(n):
+            text_right(self.getName(),c.sum(Coords(1/4*self.__size,-1/4*self.__size)))
+
         # self.getCoords().draw()
 
         return self
@@ -168,10 +174,12 @@ class Checker(Element):
     __orientation = ORIENTATION_RL
     __size = POINT_SPACE*3
     __checked = False
-
+    id = 0
     # the constructor of Entry receives a logic value and the Coords where the entry should be placed.
     def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*3):
-        super().__init__()
+        #super().__init__()
+        self.setName("C"+str(Checker.id))
+        Checker.id+=1
         self.__size = size
         self.setCoords(coords)
 
@@ -213,7 +221,7 @@ class Checker(Element):
         self.setCoords(coords)
         return self
 
-    def draw(self):
+    def draw(self,n= True):
         # line
         c = line_orientation(
             self.getCoords(), self.__orientation, a=self.__size*2/3, l=True)
@@ -245,6 +253,11 @@ class Checker(Element):
         else:
             digit_around(c, 1/4*0.6*self.__size, -1)
 
+        # name
+
+        if n:
+            text_right(self.getName(),c.sum(Coords(1/6*self.__size,-5/12*self.__size)))
+
         # self.getCoords().draw()
 
         return self
@@ -270,15 +283,16 @@ class Display(Element):
     __ligh_off: Color = Color(r=0.2)
     __orientation = ORIENTATION_RL
     __size = POINT_SPACE*4
-
+    id = 0
     def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4):
+        self.setName("D"+str(Display.id))
+        Display.id+=1
         self.setCoords(coords)
         self.__size = size
         self.__updateCoords()
 
     def __updateCoords(self):
         c = Coords(0.0, 0.0)
-        print("entrei")
         self.__checks = []
         for i in range(4):
             self.__checks.append(Checker())
@@ -331,7 +345,7 @@ class Display(Element):
         return line_orientation(line_orientation(
             self.getCoords(), self.__orientation, a=self.__size*1/8, l=False), (self.__orientation+1) % 4, a=self.__size*1/8, l=False)
 
-    def draw(self):
+    def draw(self,n= True):
         v = 0
         for i in range(4):
             v += (2**i)*(1 if self.__checks[i].getValue() else 0)
@@ -390,18 +404,19 @@ class KeyBoard(Element):
     __ligh_off: Color = Color(r=0.2)
     __orientation = ORIENTATION_LR
     __size = POINT_SPACE*4
-
+    id = 0
     def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4):
+        self.setName("K"+str(KeyBoard.id))
+        KeyBoard.id+=1
         self.setCoords(coords)
         self.__size = size
         self.__updateCoords()
 
     def __updateCoords(self):
         c = Coords(0.0, 0.0)
-        print("entrei")
         self.__entries = []
         for i in range(4):
-            self.__entries.append(Checker())
+            self.__entries.append(Entry())
             # definindo a rotação do componente
             if self.__orientation % 2 == 0:  # LR or RL
                 self.__entries[i].setCoords(c.sum(Coords(self.__size*1/2, -self.__size*1/4 + i*self.__size*1/4)) if int(
@@ -466,7 +481,7 @@ class KeyBoard(Element):
         return line_orientation(line_orientation(
             self.getCoords(), self.__orientation, a=self.__size*1/8, l=False), (self.__orientation+3) % 4, a=self.__size*1/8, l=False)
 
-    def draw(self):
+    def draw(self,n= True):
         v = 0
         for i in range(4):
             v += (2**i)*(1 if self.__entries[i].getValue() else 0)
@@ -663,7 +678,7 @@ class Gate(Element):
     def getD(self):
         return line_orientation(self.__out.getCoords().sum(self.getCoords()), self.__orientation, self.__size/5, l=False)
 
-    def draw(self):
+    def draw(self,n= True):
         # self.getCoords().draw()
         for check in self.__checks:
             line_orientation(check.getCoords().sum(
@@ -704,8 +719,8 @@ class NotGate(Gate):
             return entry.setValue(None)
         return entry.setValue(not self.getIn(0).getValue())
 
-    def draw(self):
-        super().draw()
+    def draw(self,n= True):
+        super().draw(n=n)
         point = self.getD()
 
         # set center
@@ -768,8 +783,8 @@ class AndGate(Gate):
         ret.append(Coords(-self.getSize()*3/10, self.getSize()/5))
         return ret
 
-    def draw(self):
-        super().draw()
+    def draw(self,n= True):
+        super().draw(n=n)
 
         # set center
         glMatrixMode(GL_MODELVIEW)
@@ -820,8 +835,8 @@ class NandGate(AndGate):
         return entry.setValue(not(self.getIn(0).getValue()
                                   and self.getIn(1).getValue()))
 
-    def draw(self):
-        super().draw()
+    def draw(self,n= True):
+        super().draw(n=n)
         point = self.getD()
         point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
@@ -851,8 +866,8 @@ class OrGate(Gate):
         ret.append(Coords(self.getSize()*3/10, 0))
         return ret
 
-    def draw(self):
-        super().draw()
+    def draw(self,n= True):
+        super().draw(n=n)
 
         # set center
         glMatrixMode(GL_MODELVIEW)
@@ -907,8 +922,8 @@ class NorGate(OrGate):
         return entry.setValue(not(self.getIn(0).getValue()
                                   or self.getIn(1).getValue()))
 
-    def draw(self):
-        super().draw()
+    def draw(self,n= True):
+        super().draw(n=n)
         point = self.getD()
         point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self
@@ -922,8 +937,8 @@ class XorGate(OrGate):
             return entry.setValue(None)
         return entry.setValue(self.getIn(0).getValue() != self.getIn(1).getValue())
 
-    def draw(self):
-        super().draw()
+    def draw(self,n= True):
+        super().draw(n=n)
 
         # set center
         glMatrixMode(GL_MODELVIEW)
@@ -955,8 +970,8 @@ class XnorGate(XorGate):
             return entry.setValue(None)
         return entry.setValue(self.getIn(0).getValue() == self.getIn(1).getValue())
 
-    def draw(self):
-        super().draw()
+    def draw(self,n= True):
+        super().draw(n=n)
         point = self.getD()
         point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
         return self

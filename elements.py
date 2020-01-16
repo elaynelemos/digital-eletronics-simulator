@@ -335,7 +335,7 @@ class PainelComponents(Element):
             Coords(23-self.__coords.getX(), span).apply()
             glEnd()
 
-            self.iconsComponnent[i].draw()
+            self.iconsComponnent[i].draw(n=False)
 
         glLineWidth(3)
 

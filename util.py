@@ -248,6 +248,9 @@ class Coords(Element):
 
     def glTranslate(self):
         glTranslatef(self.__x, self.__y, 0.0)
+    
+    def glRasterPos(self):
+        glRasterPos2f(self.__x, self.__y)
 
 
 def rect(c1: Coords, c2: Coords, c3: Coords, c4: Coords):
@@ -458,3 +461,16 @@ def is_inside_triangle(c: Coords, l: [Coords],p=False) -> bool:
         else:
             return rect_top_bottom(c, x1, x2) >= 0 and rect_top_bottom(c, x0, x2) <= 0
     return False
+
+def draw_text_bitmaps(font,texto):
+
+    while texto != '':
+        glutBitmapCharacter(font, ord(texto[0]))
+        texto = texto[1:]
+        
+
+
+#Recebe uma palavra e o a coordenada de onde ela iniciará/
+def text_right(word:str,coords:Coords):
+    coords.glRasterPos()
+    draw_text_bitmaps(GLUT_BITMAP_HELVETICA_10, word)
