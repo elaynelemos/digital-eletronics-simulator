@@ -22,6 +22,9 @@ DELETE = 2
 
 #This class is resposible for draw the wires in window. All the operations needed 
 #to do this are here
+
+
+
 class WireManager(Element):
     __startWire: Coords = Coords(0,0)          #Wire star coordinate
     __endWire: Coords = Coords(0,0)            #Wire end coordinate
@@ -138,14 +141,14 @@ class WireManager(Element):
 
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, window =None) -> bool:
-       
+
         m = glutGetModifiers()
         
         if window is not None and window.getDragComponent()== False:
             
             if event_type == EVENT_TYPE_MOUSE:
           
-                if button == GLUT_LEFT_BUTTON and state == GLUT_UP:
+                if button == GLUT_LEFT_BUTTON and state == GLUT_UP and m!=GLUT_ACTIVE_CTRL:
                     self.__drawWire = True
                     self.__wireCanceled = False
                     self.setStartWire(coords)
@@ -170,7 +173,64 @@ class WireManager(Element):
         
         return False
 
-#This class is responsible for draw the elements like gaters and entrys and grid 
+class MessageBox(Element):
+    __center: Coords = None
+    __message: str = ""
+    __visible: bool = True
+    def __init__(self, coords: Coords =(0,0)):
+        super().__init__()
+    
+    def setCenter(self, center: Coords):
+        self.__center = center
+    def getCenter(self, center:Coords):
+        return self.__center
+
+    def setVisible(self, visible:bool):
+        self.__visible = visible
+
+    def getVisible(self)->bool:
+        return self.__visible
+
+    def setMessage(self, string: str):
+        self.__message = string
+
+    def setCenter(self, coords: Coords):
+        self.__center = coords
+    def getCenter(self)->Coords:
+        return self.__center
+
+    def draw(self):
+        if self.__visible:
+            Color(149/255, 196/255, 223/255).apply()
+            rect(Coords(-77+self.__center.getX(),-31+self.__center.getY()),
+            Coords(-77+self.__center.getX(),31+self.__center.getY()),
+            Coords(77+self.__center.getX(),31+self.__center.getY()),
+            Coords(77+self.__center.getX(),-31+self.__center.getY()))
+
+            Color(216/255, 216/255, 216/255).apply()
+            rect(Coords(-75+self.__center.getX(),-29+self.__center.getY()),
+            Coords(-75+self.__center.getX(),29+self.__center.getY()),
+            Coords(75+self.__center.getX(),29+self.__center.getY()),
+            Coords(75+self.__center.getX(),-29+self.__center.getY()))
+
+            Color(0.0,0.0,0.0).apply()
+            glLineWidth(0.9)
+            glBegin(GL_LINE_LOOP)
+            Coords(-75+self.__center.getX(),-29+self.__center.getY()).apply()
+            Coords(-75+self.__center.getX(),29+self.__center.getY()).apply()
+            Coords(75+self.__center.getX(),29+self.__center.getY()).apply()
+            Coords(75+self.__center.getX(),-29+self.__center.getY()).apply()
+            glEnd()
+            glLineWidth(3)
+                
+            text("Error",Coords(-60+self.__center.getX(),-10+self.__center.getY()))
+    def isInside(self):
+        pass
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None, window =None) -> bool:
+        pass
+
+#This class is responsible for draw the elements like gaters and entrys and grid
+#  
 class Window(Element):
 
     factor: float = 0.1
@@ -178,6 +238,7 @@ class Window(Element):
     __currentComponentDragged: int = 0 
     __simulation: bool = False
     __logicAnalyzer: LogicAnalyzer = None
+    __messageBox: MessageBox = None
 
     __translate: Coords = Coords(0,0)
     def __init__(self):
@@ -194,6 +255,14 @@ class Window(Element):
         self.displays = []
         self.wires = []
         self.logic = None
+        self.setMessageBox(MessageBox())
+        self.getMessageBox().setCenter(self.getCenter())
+    
+    def setMessageBox(self, messageBox: MessageBox):
+        self.__messageBox = messageBox
+
+    def getMessageBox(self):
+        return self.__messageBox
 
     def setTranslate(self, translate:Coords):
         self.__translate = Coords(self.__translate.getX()+translate.getX(), self.__translate.getY()+translate.getY())
@@ -299,25 +368,29 @@ class Window(Element):
          # self.logicAnalyzer.apply()
         #Draw the windows grid
         Color(0.0,0.0,0.0).apply()
+       
+       
         glPointSize(1.0)
         glBegin(GL_POINTS)
         for i in range(self.validPoint(self.windowStartPosition.getX()),self.validPoint(self.size.getX()), 5):
             for j in range(self.validPoint(self.windowStartPosition.getY()),self.validPoint(self.size.getY()), 5):
                 Coords(i,j).apply()
         glEnd()        
-        
-       
+         
+        self.__messageBox.draw()
         #self.center.draw(radius=1.0)
         #Draw the elements in window
-        #glMatrixMode(GL_PROJECTION)
-        #glPushMatrix()
-        #glTranslated(self.__translate.getX(),self.__translate.getY(), 0.0)
+       
         for i in self.elements:
+            
             i.draw()
+       
         #return self
         #glPopMatrix()
     def adjustCenter(self):
-        self.setCenter(Coords(self.validPoint((self.size.getX()/2)+self.windowStartPosition.getX()), self.validPoint((self.size.getY()/2)+self.windowStartPosition.getY())))
+        coords = Coords(self.validPoint((self.size.getX()/2)+self.windowStartPosition.getX()), self.validPoint((self.size.getY()/2)+self.windowStartPosition.getY()))
+        self.setCenter = coords
+        self.getMessageBox().setCenter(coords)
        
     def updateCoordsElementsWindows(self, translate: Coords):
          for i in self.elements:
@@ -325,8 +398,8 @@ class Window(Element):
 
     def getIndexComponentIsInside(self, coords: Coords):
         for i in range(len(self.elements)):
-            if self.elements[i].isInside(coords) == True:
-                return i
+            if self.elements[len(self.elements)-i-1].isInside(coords) == True:
+                return len(self.elements)-i-1
         return -1
 
     def prepareWireForSimulation(self, wireManager: WireManager):
@@ -561,7 +634,8 @@ class Panel(Element):
         self.setWireManager(WireManager())
         self.translateWindows(Coords(0,0))
         self.__window.adjustCenter()
-    
+    def getCoordMouse(self):
+        return self.__coordMouse
     def translateWindows(self,coords: Coords):
 
         self.__translation = coords
@@ -632,9 +706,10 @@ class Panel(Element):
             
             glPointSize(5.0)
             glBegin(GL_POINTS)
-            Coords(self.coordMouse.getX(),self.coordMouse.getY()).apply()
+            Coords(self.__coordMouse.getX(),self.__coordMouse.getY()).apply()
             glEnd()
-        
+    
+
     def rotate(self, selection):
         if selection == 0:
             if self.__indexComponent == -1:
@@ -670,19 +745,17 @@ class Panel(Element):
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         
         if coords is not None:
-            self.coordMouse = Coords(self.validPoint(coords.getX()),self.validPoint(coords.getY()))
+            self.__coordMouse = Coords(self.validPoint(coords.getX()),self.validPoint(coords.getY()))
         if event_type == EVENT_TYPE_MOUSE:
             if button == GLUT_LEFT_BUTTON:
-                
+        
                 self.__indexComponent = self.__window.getIndexComponentIsInside(coords)
                 print(self.__indexComponent)
                 if self.__indexComponent!=-1:
                     self.createMenu()
                  
                
-
-               
-            if self.isInside(coords.getX(), coords.getY()) == True:
+            if self.isInside(coords.getX(), coords.getY()) == True and self.getWindow().isSimulation() :
                 self.__wireManager.event(event_type, key, button, state, coords,self.__window)
 
         if event_type == EVENT_TYPE_KEY_ASCII:
@@ -1251,7 +1324,7 @@ class WindowsBar(Element):
         self.shift = 15
         self.__painelComponents = PainelComponents(Coords(100, 100))
         self.__panel = Panel(Coords(100, 100))
-    
+   
 
     def setWindowBarNumber(self, windowBarNumber: int):
         self.__windowBarNumber = windowBarNumber
@@ -1371,7 +1444,7 @@ class WindowsBar(Element):
         line(Coords((68-self.__windowSize.getX()),self.shift  +12- self.__windowSize.getY()),
         Coords(72-self.__windowSize.getX(), self.shift  +16-self.__windowSize.getY()),3)
         glPopMatrix()
-
+     
     def draw(self):
 
         if self.__focus == True:
@@ -1383,7 +1456,7 @@ class WindowsBar(Element):
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         if event_type == EVENT_TYPE_MOUSE:
-            if state == GLUT_UP:
+            if state == GLUT_UP and self.getPanel().getWindow().isSimulation():
                 self.addComponentWindow(coords)
        
         if self.__panel is not None:
@@ -1428,6 +1501,7 @@ class WindowGlobal(Element):
             for i in self.tools:
                 i.draw()
 
+    
     def drawAbas(self):
         for i in self.workSet:
             i.draw()
@@ -1437,13 +1511,18 @@ class WindowGlobal(Element):
         Color(228/255, 233/255, 237/255).apply()  
         rect(Coords(-self.__width,-self.__height), Coords(-self.__width,self.__height),Coords(27-self.__width,self.__height),Coords(27-self.__width,-self.__height))
         rect(Coords(27-self.__width,-self.__height), Coords(27-self.__width,38-self.__height),Coords(self.__width,38-self.__height),Coords(self.__width,-self.__height))
-        
+    
+    
     def draw(self):
         
         
-        if self.__whatAbaIsFocus > -1:
+        if self.__whatAbaIsFocus > -1 and len(self.workSet)>0:
             self.workSet[self.__whatAbaIsFocus].getPanel().draw()
             self.drawShadow()
+            Color(0.0,0.0,0.0).apply()
+            text_right(str(self.workSet[self.__whatAbaIsFocus].getPanel().getCoordMouse().getX())+", "+
+            str(self.workSet[self.__whatAbaIsFocus].getPanel().getCoordMouse().getY()), Coords(self.__width-30,10-self.__height))
+            
             self.workSet[self.__whatAbaIsFocus].getPanelComponents().draw()
         #self.drawShadow()
         self.drawAbas()
@@ -1555,7 +1634,7 @@ class WindowGlobal(Element):
            
         
         #If there is a tab in focus triggered the event in its tab
-        if  self.__whatAbaIsFocus > -1: 
+        if  self.__whatAbaIsFocus > -1 and len(self.workSet)>0: 
                 self.workSet[self.__whatAbaIsFocus].event(event_type, key=key, button=button, state=state, coords=coords)
                 if len(self.tools) > 0:
                     for i in self.tools:

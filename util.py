@@ -484,3 +484,7 @@ def draw_text_bitmaps(font,texto):
 def text_right(word:str,coords:Coords):
     coords.glRasterPos()
     draw_text_bitmaps(GLUT_BITMAP_HELVETICA_10, word)
+
+def text(word:str,coords:Coords):
+    coords.glRasterPos()
+    draw_text_bitmaps(GLUT_BITMAP_HELVETICA_18, word)
