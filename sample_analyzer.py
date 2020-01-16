@@ -92,9 +92,9 @@ wires = []
 
 # valores ainda não atualizados
 for i in checkers:
-    print(str(i))
+    print(str(i) + " v = " + ("1" if i.getValue()==True else ("0" if i.getValue()==False else "N")))
 for i in entries:
-    print(str(i))
+    print(str(i) + " v = " + ("1" if i.getValue()==True else ("0" if i.getValue()==False else "N")))
 
 print()
 
@@ -106,6 +106,6 @@ logicAnalyzer.analyze()
     ele se comportará com o valor calculado pelo analisador
 """
 for i in checkers:
-    print(str(i))
+    print(str(i) + " v = " + ("1" if i.getValue()==True else ("0" if i.getValue()==False else "N")))
 for i in entries:
-    print(str(i))
+    print(str(i) + " v = " + ("1" if i.getValue()==True else ("0" if i.getValue()==False else "N")))

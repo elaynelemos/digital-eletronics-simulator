@@ -7,6 +7,10 @@ from abc import ABC, abstractmethod
 
 import math
 
+import re
+
+regexClass = r"<\w* '\w*.(\w*)'>"
+
 POINT_SPACE = 5.0
 
 EVENT_TYPE_MOUSE = 0
@@ -98,6 +102,13 @@ COLOR_NONE = Color(r=96.0/255, g=96.0/255, b=96.0/255)
 
 STROKE_WIDTH = POINT_SPACE/2
 
+def getClass(s):
+    matches = re.search(regexClass, str(s))
+    if matches:
+        return matches.group(1)
+    else:
+        return "Unknow"
+
 # Element: It's a abstract Class to define some Methods to next classes
 
 
@@ -141,7 +152,7 @@ class Element(ABC):
         return False
 
     def __str__(self):
-        return "[Name: "+self.getName()+"]"+str(type(self))
+        return self.getName()+"-"+getClass(type(self))
 
 
 # Coords: It's the "data type" of a point on the screen.
@@ -150,7 +161,6 @@ class Coords(Element):
     # invalid number for screen to be treated if there's any error in insertion.
     __x: float = None
     __y: float = None
-
     # the constructor of Coords receives a coordinate pair.
     def __init__(self, x: float, y: float) -> None:
         super().__init__()
@@ -244,7 +254,7 @@ class Coords(Element):
         return c.getX() == self.getX() and c.getY() == self.getY()
 
     def __str__(self):
-        return "COORDS[x: "+str(self.getX())+" y:"+str(self.getY())+"]"
+        return super().__str__()+"["+str(self.getX())+":"+str(self.getY())+"]"
 
     def glTranslate(self):
         glTranslatef(self.__x, self.__y, 0.0)

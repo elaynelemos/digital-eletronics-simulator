@@ -38,15 +38,17 @@ class Entry(Element):
     __orientation = ORIENTATION_LR
     __size = POINT_SPACE*4
     __gate = None
+    __keyboard = None
     id = 0
     # the constructor of Entry receives a logic value and the Coords where the entry should be placed.
-    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4, gate=None):
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*4, gate=None,keyboard = None):
         #super().__init__()
         self.setName("E"+str(Entry.id))
         Entry.id+=1
         self.__size = size
         self.setCoords(coords)
         self.__gate = gate
+        self.__keyboard = keyboard
 
     def getValue(self) -> bool:
         return self.__value
@@ -164,7 +166,7 @@ class Entry(Element):
         return coords.in_around(c, self.__size/4) or is_inside_triangle(coords, [d, m1, m2])
 
     def __str__(self):
-        return "Entry["+str(self.__coords)+"\tGate: "+str(self.__gate)+"\tvalue: "+str(self.__value)+"]"
+        return super().__str__()+ (" of "+str(self.__keyboard) if self.__keyboard is not None else "") + (" of "+str(self.__gate) if self.__gate is not None else "")
 
 
 class Checker(Element):
@@ -174,14 +176,18 @@ class Checker(Element):
     __orientation = ORIENTATION_RL
     __size = POINT_SPACE*3
     __checked = False
+    __display = None
+    __gate = None
     id = 0
     # the constructor of Entry receives a logic value and the Coords where the entry should be placed.
-    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*3):
+    def __init__(self, coords: Coords = Coords(0.0, 0.0), size=POINT_SPACE*3, display = None, gate = None):
         #super().__init__()
         self.setName("C"+str(Checker.id))
         Checker.id+=1
         self.__size = size
         self.setCoords(coords)
+        self.__display = display
+        self.__gate = gate
 
     def getValue(self) -> bool:
         return self.__value
@@ -272,7 +278,7 @@ class Checker(Element):
         return coords.in_around(c, self.__size/3)
 
     def __str__(self):
-        return "Checker["+str(self.__coords)+"\tChecked: "+str(self.__checked)+"\tvalue: "+str(self.__value)+"]"
+        return super().__str__()+ (" of "+str(self.__display) if self.__display is not None else "")+ (" of "+str(self.__gate) if self.__gate is not None else "")
 
 
 class Display(Element):
@@ -295,7 +301,7 @@ class Display(Element):
         c = Coords(0.0, 0.0)
         self.__checks = []
         for i in range(4):
-            self.__checks.append(Checker())
+            self.__checks.append(Checker(display = self))
             # definindo a rotação do componente
             if self.__orientation % 2 == 0:  # LR or RL
                 self.__checks[i].setCoords(c.sum(Coords(self.__size*1/2, -self.__size*1/4 + i*self.__size*1/4)) if int(
@@ -416,7 +422,7 @@ class KeyBoard(Element):
         c = Coords(0.0, 0.0)
         self.__entries = []
         for i in range(4):
-            self.__entries.append(Entry())
+            self.__entries.append(Entry(keyboard = self))
             # definindo a rotação do componente
             if self.__orientation % 2 == 0:  # LR or RL
                 self.__entries[i].setCoords(c.sum(Coords(self.__size*1/2, -self.__size*1/4 + i*self.__size*1/4)) if int(
@@ -637,8 +643,8 @@ class Gate(Element):
         self.resetEntries()
 
         # If is not a Not Gate, then will have two entries
-        self.__checks.append(Checker())
-        self.__checks.append(Checker())
+        self.__checks.append(Checker(gate = self))
+        self.__checks.append(Checker(gate = self))
 
         # Configures orientation
         self.__out.setCoords(line_orientation(
@@ -701,7 +707,7 @@ class NotGate(Gate):
         self.resetEntries()
 
         # If is not a Not Gate, then will have two entries
-        self.getChecks().append(Checker())
+        self.getChecks().append(Checker(gate = self))
 
         # Configures orientation
         self.gateOut().setCoords(line_orientation(self.getCoords(),

@@ -283,7 +283,7 @@ class Window(Element):
         glEnd()        
         
        
-        self.center.draw(radius=1.0)
+        #self.center.draw(radius=1.0)
         #Draw the elements in window
         for i in self.elements:
             i.draw()
