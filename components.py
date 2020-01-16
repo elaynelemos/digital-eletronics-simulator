@@ -1112,7 +1112,8 @@ class Wire(Element):
 
     def draw(self):
         return self
-
+    def isInside(self):
+        return False
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         return False
 

@@ -212,7 +212,7 @@ class Window(Element):
         
         checks.extend(self.checks)
         entrys.extend(self.entrys)
-        self.logicAnalyzer = LogicAnalyzer(entrys, wires, checks)
+        self.__logicAnalyzer = LogicAnalyzer(entrys,wire, checks)
 
     def deactivateSimulation(self):
         self.__logicAnalyzer = None
@@ -221,7 +221,7 @@ class Window(Element):
 
     
     def isSimulation(self)->bool:
-        return self.logicAnalyzer == None
+        return self.__logicAnalyzer == None
 
     def setDragComponent(self, drag):
         self.__dragComponent = drag
