@@ -16,20 +16,26 @@ EVENT_TYPE_KEY_ASCII = 1
 #Types of wires
 TYPE_WIRE_Z = 0
 TYPE_WIRE_Z_INVERT = 1 
+ROTATE = 0
+DUPLICATE = 1
+DELETE = 2
 
 #This class is resposible for draw the wires in window. All the operations needed 
 #to do this are here
 class WireManager(Element):
-    __startWire: Coords = None          #Wire star coordinate
-    __endWire: Coords = None            #Wire end coordinate
+    __startWire: Coords = Coords(0,0)          #Wire star coordinate
+    __endWire: Coords = Coords(0,0)            #Wire end coordinate
     __drawWire: bool = False            #Determine if the user want draw a wire
     __typeWire: int = None              #Determine type wire
     __wireCanceled: bool = False
+    __start: bool = True
     def __init__(self):
         super().__init__()
         self.dotsWires = []
         self.setTypeWire(TYPE_WIRE_Z_INVERT)
 
+    def getDotsWires(self):
+        return self.dotsWires
     def setTypeWire(self,type: int):
         self.__typeWire = type
     def setEndWire(self,coords = Coords):
@@ -88,8 +94,12 @@ class WireManager(Element):
         self.dotsWires.append(list)
         
 
-    def isInside(self):
-        pass
+    def isInside(self, coords):
+        for i in self.elements:
+            if i.isInside(coords) == True:
+                return i
+        return None
+            
 
 
     #Draw all wires already terminated    
@@ -109,10 +119,14 @@ class WireManager(Element):
             self.drawWireCurrent()
 
 
+
+
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, window =None) -> bool:
+       
+        m = glutGetModifiers()
         
-     
         if window is not None and window.getDragComponent()== False:
+            
             if event_type == EVENT_TYPE_MOUSE:
           
                 if button == GLUT_LEFT_BUTTON and state == GLUT_UP:
@@ -120,10 +134,11 @@ class WireManager(Element):
                     self.__wireCanceled = False
                     self.setStartWire(coords)
 
-                if button == GLUT_RIGHT_BUTTON and state == GLUT_UP:
+                #if button == GLUT_RIGHT_BUTTON and state == GLUT_UP:
+            if m == GLUT_ACTIVE_CTRL:
                     self.__drawWire = False
                     if self.__wireCanceled == False:
-                        self.addDotsToWire()
+                        self.addDotsToWire()    
 
             if event_type == EVENT_TYPE_KEY_ASCII and key ==  b'\x1b':
                 self.__drawWire = False
@@ -134,9 +149,10 @@ class WireManager(Element):
                 
                 if self.__drawWire == True:
                     self.setEndWire(coords)
-           
+        else:
+            self.__drawWire = False   
         
-        return None
+        return False
 
 #This class is responsible for draw the elements like gaters and entrys and grid 
 class Window(Element):
@@ -158,32 +174,50 @@ class Window(Element):
         self.keyboards = []
         self.entrys = []
         self.gates = []
+        self.displays = []
+        self.wires = []
+
+    def breakListElements(self):
+        for i in self.elements:
+            if isinstance(i,(NotGate, AndGate,NandGate, OrGate, NorGate, XorGate, XnorGate)):    
+                self.gates.append(i)
+            elif isinstance(i,KeyBoard):
+                self.keyboards.append(i)
+            elif isinstance(i,Checker):
+                self.checks.append(i)
+            elif isinstance(i,Entry):
+                self.entrys.append(i)
+            elif isinstance(i,Display):
+                self.displays.append(i)
 
     def ativateSimulation(self):
-        
+        self.breakListElements()
         checks = []
         entrys = []
-        wire = []
-
-        for i in self.gates():
+        
+        
+        for i in self.gates:
             checks.extend(i.getChecks())
             entrys.append(i.gateOut())
 
         for i in self.displays:
-            checks.extend(i.getCheks())
+            checks.extend(i.getChecks())
 
         for i in self.keyboards:
             entrys.extend(i.getEntries())
 
-        for i in self.wires:
-            wire.append(Wire(i))
+        #for i in self.wires:
+            #wire.append(Wire(i))
         
         checks.extend(self.checks)
         entrys.extend(self.entrys)
-        self.logicAnalyzer = LogicAnalyzer(entrys, wire, checks)
+        self.logicAnalyzer = LogicAnalyzer(entrys, self.wires, checks)
+        self.wires.clear()
 
     def deactivateSimulation(self):
         self.logicAnalyzer = None
+        self.wires.clear()
+        print("sim")
 
     
     def isSimulation(self)->bool:
@@ -262,33 +296,92 @@ class Window(Element):
          for i in self.elements:
                 i.setCoords(Coords(i.getCoords().getX()+translate.getX(),i.getCoords().getY()+translate.getY()))
 
+    def getIndexComponentIsInside(self, coords: Coords):
+        for i in range(len(self.elements)):
+            if self.elements[i].isInside(coords) == True:
+                return i
+        return -1
+
+    def prepareWireForSimulation(self, wireManager: WireManager):
+        for i in wireManager.getDotsWires():
+            l = []
+            l.append(i[0])
+            l.append(i[-1])
+            self.wires.append(l)
+
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         
-        
-        #for i in range(len(self.elements)):
-           # if self.elements[len(self.elements)-i-1].event(event_type, key=key, button=button, state=state, coords=coords):
+        if self.__logicAnalyzer is not None:
+            for i in range(len(self.elements)):
+                self.elements[len(self.elements)-i-1].event(event_type, key, button, state, coords)
             #    return True
-
-        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP:
+        else:
+            if event_type == EVENT_TYPE_MOUSE and button == GLUT_LEFT_BUTTON and state == GLUT_UP:
            
-            if len(self.elements)> 0:
-                if self.__dragComponent == False:
-                    for i in range(len(self.elements)):
-                        if self.elements[i].isInside(coords) == True:
-                            self.__currentComponentDragged = i
+                if len(self.elements)> 0:
+                    if self.__dragComponent == False:
+                        index = self.getIndexComponentIsInside(coords)
+                        if index != -1:
+                            self.__currentComponentDragged = index
                             self.__dragComponent = True
-                else:
-                    self.__dragComponent = False
+                            return True
+                    else:
+                        self.__dragComponent = False
+                        return True
             
-        if event_type == EVENT_TYPE_MOUSE_WALKING_NOT_PRESS:
-            if self.__dragComponent == True:
-                self.elements[ self.__currentComponentDragged].setCoords(Coords(self.validPoint(coords.getX()),self.validPoint(coords.getY())))
+            if event_type == EVENT_TYPE_MOUSE_WALKING_NOT_PRESS:
+                if self.__dragComponent == True:
+                    self.elements[ self.__currentComponentDragged].setCoords(Coords(self.validPoint(coords.getX()),self.validPoint(coords.getY())))
+                    return True
 
         return False
 
     def isInside(self, coords) -> bool:
         return False
+"""
+class Menu(Element):
+    __indexComponent: int = -1
 
+    def __init__(self, coords =Coords(0,0)):
+        self.super().__init__()
+
+    def menu(self, a):   
+        pass
+    def rotateElement(window: Window):
+        if window is not None:
+            index = window.getIndexComponentIsInside()
+            if index != -1:
+                self.__indexComponent = index
+
+    def rotate(self, selection):
+        if selection == 0:
+            pass
+        if selection == 1:
+            pass
+    def createMenu(self):
+
+        #submenu2 = glutCreateMenu(self.rotate)
+        #glutAddMenuEntry("90 degrees left",0)
+        #glutAddMenuEntry("90 degrees left",1)
+	    
+        menu =  glutCreateMenu(self.menu)
+        #glutAddSubMenu("Rotate", submenu2)
+        glutAddMenuEntry("Rotate", 0)
+        glutAddMenuEntry("Delete",1)
+        glutAddMenuEntry("Duplicate",2)
+     
+        glutAttachMenu(GLUT_RIGHT_BUTTON)
+
+    
+        
+    def isInside(self):
+        pass
+
+    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_RIGHT_BUTTON:
+            self.createMenu()
+        return None
+"""
 
 # Painel contends the logics ports and others components like checker and entry 
 # for choose by user.
@@ -419,6 +512,10 @@ class Panel(Element):
     __window: Window = None  # All components will be stored here.
     __wireManager: WireManager = None
     __translation: Coords = None
+    __activateMenu: bool = False
+    __indexComponent: int = -1
+    __coordsClick: Coords= None
+    
 
     def __init__(self, coords):
         super().__init__()
@@ -490,6 +587,34 @@ class Panel(Element):
             self.__window.draw()
             self.__wireManager.draw()
 
+
+        
+    def rotate(self, selection):
+        if selection == 0:
+            if self.__indexComponent == -1:
+                pass
+            else:
+                self.__window.elements[self.__indexComponent].setRotation()
+            return 0
+        
+        if selection == 1:
+            if len(self.__window.elements)>0 and self.__indexComponent != -1:
+                if self.__window.getDragComponent() ==False:
+                    self.__window.elements.pop(self.__indexComponent)
+                
+
+            return 0
+        
+            
+    def createMenu(self):
+
+     
+        menu =  glutCreateMenu(self.rotate)
+        glutAddMenuEntry("Rotate", 0)
+        glutAddMenuEntry("Delete",1)
+        glutAttachMenu(GLUT_RIGHT_BUTTON)
+        return 0
+    
     def isInside(self, x: int, y: int) -> bool:
         if (((27-self.__coords.getX()) < x and x < (self.__coords.getX()-3)) and ((self.shift + 23 - self.__coords.getY()) < y < (self.__coords.getY()))):
             return True
@@ -497,9 +622,17 @@ class Panel(Element):
             return False
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        
         if event_type == EVENT_TYPE_MOUSE:
-            #Check if the click is on panel. Otherwise ignore
+            if button == GLUT_LEFT_BUTTON:
+                
+                self.__indexComponent = self.__window.getIndexComponentIsInside(coords)
+                print(self.__indexComponent)
+                if self.__indexComponent!=-1:
+                    self.createMenu()
+                 
+               
+
+               
             if self.isInside(coords.getX(), coords.getY()) == True:
                 self.__wireManager.event(event_type, key, button, state, coords,self.__window)
 
@@ -509,7 +642,7 @@ class Panel(Element):
         self.__window.event( event_type, key, button, state, coords)
         return None
         
-
+        
 
 class IconZoomMore(Element):
     __coords: Coords = None
@@ -718,7 +851,11 @@ class IconStart(Icon):
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
-        pass
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP:
+            windowsBar.getPanel().getWindow().prepareWireForSimulation(windowsBar.getPanel().getWireManager())
+            windowsBar.getPanel().getWindow().ativateSimulation()
+            print("Start Simulation: ")
+           
 
 class IconStop(Icon):
 
@@ -755,7 +892,9 @@ class IconStop(Icon):
     def isInside(self, x: int, y: int)->bool:
         return super().isInside(x,y)
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
-        pass
+        if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP:
+            windowsBar.getPanel().getWindow().deactivateSimulation()
+            print("Stop Simulation: ")
 class IconPrevious(Icon):
 
     def __init__(self, coord: Coords(0, 0)):
