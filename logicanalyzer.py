@@ -85,7 +85,8 @@ class LogicAnalyzer:
                     if(wire[1].equals(wire2[0])):
                         wire2[0] = wire[0]
                     if(wire[1].equals(wire2[1])):
-                        wire2[1] = wire[0]
+                        wire2[1] = wire2[0]
+                        wire2[0] = wire[0]
 
             for entry in self.getEntries():
                 if(wire[1].equals(entry.getTechCoords())):
