@@ -87,8 +87,13 @@ for i in checkers:
 for i in entries:
     print(str(i))
 
+print()
+print(len(entries[7].getGate().getChecks()))
+a=entries[7].getGate().getChecks()
+print(a[0].getChecked())
+
 logicAnalyzer = LogicAnalyzer(entries, wires, checkers)
-#logicAnalyzer.defineValues()
+logicAnalyzer.analyze()
 
 #simulando o analyzer
 """
