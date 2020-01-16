@@ -195,7 +195,7 @@ class Window(Element):
         self.breakListElements()
         checks = []
         entrys = []
-        
+        wire = []
         
         for i in self.gates:
             checks.extend(i.getChecks())
@@ -207,13 +207,12 @@ class Window(Element):
         for i in self.keyboards:
             entrys.extend(i.getEntries())
 
-        #for i in self.wires:
-            #wire.append(Wire(i))
+        for i in self.wires:
+            wire.append(Wire(i))
         
         checks.extend(self.checks)
         entrys.extend(self.entrys)
-        self.logicAnalyzer = LogicAnalyzer(entrys, self.wires, checks)
-        self.wires.clear()
+        self.logicAnalyzer = LogicAnalyzer(entrys, wires, checks)
 
     def deactivateSimulation(self):
         self.logicAnalyzer = None
