@@ -221,7 +221,7 @@ class Window(Element):
         
         checks.extend(self.checks)
         entrys.extend(self.entrys)
-        self.__logicAnalyzer = LogicAnalyzer(entrys, wires, checks)
+        self.__logicAnalyzer = LogicAnalyzer(entrys, wire, checks)
 
     def deactivateSimulation(self):
         self.__logicAnalyzer = None
