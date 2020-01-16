@@ -305,11 +305,11 @@ class Display(Element):
             self.__checks.append(Checker(display = self))
             # definindo a rotação do componente
             if self.__orientation % 2 == 0:  # LR or RL
-                self.__checks[i].setCoords(c.sum(Coords(self.__size*1/2, -self.__size*1/4 + i*self.__size*1/4)) if int(
+                self.__checks[i].setCoords(c.sum(Coords(self.__size*1/2, self.__size*1/4 - i*self.__size*1/4)) if int(
                     self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/2, -self.__size*1/4 + i*self.__size*1/4)))
             else:                       # UD or DU
                 self.__checks[i].setCoords(c.sum(Coords(-self.__size*1/4 + i*self.__size*1/4, self.__size*1/2)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/4 + i*self.__size*1/4, -self.__size*1/2)))
+                    self.__orientation/2) == 0 else c.sum(Coords(self.__size*1/4 - i*self.__size*1/4, -self.__size*1/2)))
 
     def getCheck(self, i: int):
         if(i < 4 and i >= 0):
@@ -342,7 +342,7 @@ class Display(Element):
 
     def setTranslation(self, coords=Coords):
         c = line_orientation(
-            self.getCoords(), self.__orientation, a=self.__size*1/2, l=False)
+            Coords(0.0,0.0), self.__orientation, a=self.__size*1/2, l=False)
         c = line_orientation(c, (self.__orientation+1) % 4, a=self.__size*1/4)
         #c = c.mul(-1)
         self.setCoords(coords.sum(c))
@@ -437,9 +437,9 @@ class KeyBoard(Element):
             # definindo a rotação do componente
             if self.__orientation % 2 == 0:  # LR or RL
                 self.__entries[i].setCoords(c.sum(Coords(self.__size*1/2, -self.__size*1/4 + i*self.__size*1/4)) if int(
-                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/2, -self.__size*1/4 + i*self.__size*1/4)))
+                    self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/2, self.__size*1/4 - i*self.__size*1/4)))
             else:                       # UD or DU
-                self.__entries[i].setCoords(c.sum(Coords(-self.__size*1/4 + i*self.__size*1/4, self.__size*1/2)) if int(
+                self.__entries[i].setCoords(c.sum(Coords(self.__size*1/4 - i*self.__size*1/4, self.__size*1/2)) if int(
                     self.__orientation/2) == 0 else c.sum(Coords(-self.__size*1/4 + i*self.__size*1/4, -self.__size*1/2)))
 
     def getEntry(self, i: int):
@@ -488,7 +488,7 @@ class KeyBoard(Element):
 
     def setTranslation(self, coords=Coords):
         c = line_orientation(
-            self.getCoords(), self.__orientation, a=self.__size*1/2, l=False)
+            Coords(0.0,0.0), self.__orientation, a=self.__size*1/2, l=False)
         c = line_orientation(c, (self.__orientation+1) % 4, a=self.__size*1/4)
         #c = c.mul(-1)
         self.setCoords(coords.sum(c))
@@ -645,6 +645,7 @@ class Gate(Element):
     # returns True if both coords are valid.
     def setCoords(self, coords: Coords) -> Gate:
         self.__coords = coords
+        self.__updateCoords()
         return self
 
     def setRotation(self, sense=False):
@@ -655,7 +656,7 @@ class Gate(Element):
 
     def setTranslation(self, coords: Coords):
         c = line_orientation(
-            self.getCoords(), (self.__orientation+2) % 4, a=self.__size*2/5)
+            Coords(0.0,0.0), (self.__orientation+2) % 4, a=self.__size*2/5)
         c = c.mul(-1)
         self.setCoords(coords.sum(c))
         return self
@@ -703,15 +704,13 @@ class Gate(Element):
         return coords
 
     def getD(self):
-        return line_orientation(self.__out.getCoords().sum(self.getCoords()), self.__orientation, self.__size/5, l=False)
+        return line_orientation(self.__out.getCoords(), self.__orientation, self.__size/5, l=False)
 
     def draw(self,n= True):
         # self.getCoords().draw()
         for check in self.__checks:
-            line_orientation(check.getCoords().sum(
-                self.getCoords()), (self.__orientation+2) % 4, self.__size/2)
-        line_orientation(self.__out.getCoords().sum(
-            self.getCoords()), self.__orientation, self.__size/5)
+            line_orientation(check.getCoords(), (self.__orientation+2) % 4, self.__size/2)
+        line_orientation(self.__out.getCoords(), self.__orientation, self.__size/5)
 
         # name
         Color().apply()
@@ -744,6 +743,19 @@ class NotGate(Gate):
                                                   (self.getOrientation()+2) % 4, a=self.getSize()*2/5, l=False))
         self.getIn(0).setCoords(line_orientation(self.getCoords(),
                                                  self.getOrientation(), a=self.getSize()*3/5, l=False))
+
+    def setCoords(self, coords: Coords) -> Gate:
+        super().setCoords(coords)
+        self.__updateCoords()
+        return self
+
+    def setTranslation(self, coords: Coords):
+        c = line_orientation(
+            Coords(0.0,0.0), (self.getOrientation()+2) % 4, a=self.getSize()*2/5)
+        c = c.mul(-1)
+        self.setCoords(coords.sum(c))
+        return self
+
 
     def setRotation(self, sense=False):
         super().setRotation(sense=sense)
@@ -783,7 +795,7 @@ class NotGate(Gate):
 
         glPopMatrix()
 
-        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
+        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
 
         return self
 
@@ -874,7 +886,7 @@ class NandGate(AndGate):
     def draw(self,n= True):
         super().draw(n=n)
         point = self.getD()
-        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
+        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
         return self
 
 
@@ -961,7 +973,7 @@ class NorGate(OrGate):
     def draw(self,n= True):
         super().draw(n=n)
         point = self.getD()
-        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
+        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
         return self
 
 
@@ -1009,7 +1021,7 @@ class XnorGate(XorGate):
     def draw(self,n= True):
         super().draw(n=n)
         point = self.getD()
-        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color())
+        point.draw(color=Color(r=1.0, g=1.0, b=1.0), stroke=Color(),radius = self.getSize()*3/40)
         return self
 
 # Wire: Represents the connector of the logic circuit. It's defined as a list of unique
