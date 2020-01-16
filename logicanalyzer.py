@@ -80,24 +80,24 @@ class LogicAnalyzer:
 
 
     def __validateLists(self):
-        try:
-            for i in self.__entries:
-                for j in self.__wires:
-                    if isEqualPoints(i.getCoords(), j.getWireEndP()):
-                        for k in self.__entries:
-                            if isEqualPoints(j.getWireStartP(), k.getCoords()):
-                                raise RuntimeError("Error! Entries connected.")
-            for i in self.__checkers:
-                for j in self.__wires:
-                    if isEqualPoints(i.getCoords(), j.getWireEndP()):
-                        for k in self.__checkers:
-                            if isEqualPoints(j.getWireStartP(), k.getCoords()):
-                                raise RuntimeError("Error! Checkers connected.")
-        except RuntimeError as re:
-            print(re)
-            return False
-        else:
-            return True
+        for i in self.__entries:
+            for k in self.__entries:
+                if k.getCoords().equals(k.getCoords()):
+                    raise RuntimeError("Error! Entries connected.")
+            """for j in self.__wires:
+                if isEqualPoints(i.getCoords(), j.getWireEndP()):
+                    for k in self.__entries:
+                        if isEqualPoints(j.getWireStartP(), k.getCoords()):
+                            raise RuntimeError("Error! Entries connected.")
+            """
+        for i in self.__checkers:
+            """for j in self.__wires:
+                if isEqualPoints(i.getCoords(), j.getWireEndP()):
+                    for k in self.__checkers:
+                        if isEqualPoints(j.getWireStartP(), k.getCoords()):
+                            raise RuntimeError("Error! Checkers connected.")"""
+            pass
+       
 
     def __defineValues(self) -> bool:
         for i in self.__entries:
