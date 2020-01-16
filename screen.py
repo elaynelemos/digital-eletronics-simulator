@@ -93,7 +93,7 @@ def keyboard_ascii(key, x, y):
     #if window.event(EVENT_TYPE_KEY_ASCII, coords=convert(x, y), key=key):
         #showScreen()
     
-    windowGlobal.event(EVENT_TYPE_KEY_ASCII, key, None,None,None)
+    windowGlobal.event(EVENT_TYPE_KEY_ASCII, key=key, coords = convert(x, y))
     showScreen()    
     #windowGlobal.event(EVENT_TYPE_MOUSE, key, None,None,None)
     # Lista de caracteres

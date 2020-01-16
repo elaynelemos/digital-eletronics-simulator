@@ -43,10 +43,10 @@ class LogicAnalyzer:
     def setWires(self, wires:List[Wire]) -> bool:
         try:
             for i in wires:
-                if isWire(i):
+                if isinstance(i, List):
                     self.__wires.append(i)
                 else:
-                    raise AttributeError("Error! Wire attribute expected. Wires not defined. You tried to assign an", type(i))
+                    raise AttributeError("Error! List attribute expected. List not defined. You tried to assign an", type(i))
         except AttributeError as ae:
             print(ae)
             self.__wires = []
@@ -78,102 +78,75 @@ class LogicAnalyzer:
     def getCheckers(self) -> List[Checker]:
         return self.__checkers
 
+    def __netList(self):
+        for wire in self.getWires():
+            for wire2 in self.getWires():
+                if(wire != wire2):
+                    if(wire[1].equals(wire2[0])):
+                        wire2[0] = wire[0]
+                    if(wire[1].equals(wire2[1])):
+                        wire2[1] = wire[0]
+
+            for entry in self.getEntries():
+                if(wire[1].equals(entry.getTechCoords())):
+                    entry.setTechCoords(wire[0])
+            for check in self.getCheckers():
+                if(wire[1].equals(check.getTechCoords())):
+                    check.setTechCoords(wire[0])
+
 
     def __validateLists(self):
         for i in self.__entries:
             for k in self.__entries:
-                if k.getCoords().equals(k.getCoords()):
-                    raise RuntimeError("Error! Entries connected.")
-            """for j in self.__wires:
-                if isEqualPoints(i.getCoords(), j.getWireEndP()):
-                    for k in self.__entries:
-                        if isEqualPoints(j.getWireStartP(), k.getCoords()):
-                            raise RuntimeError("Error! Entries connected.")
-            """
-        for i in self.__checkers:
-            """for j in self.__wires:
-                if isEqualPoints(i.getCoords(), j.getWireEndP()):
-                    for k in self.__checkers:
-                        if isEqualPoints(j.getWireStartP(), k.getCoords()):
-                            raise RuntimeError("Error! Checkers connected.")"""
-            pass
-       
+                if i!= k and i.getTechCoords().equals(k.getTechCoords()):
+                            raise RuntimeError("Error! Entries connected. "+str(i)+ " with " + str(k)+".")
+    
+        return True
 
     def __defineValues(self) -> bool:
-        for i in self.__entries:
-            if i.getGate() is None:
-                for j in self.__checkers:
-                    if isEqualPoints(i.getCoords(), j.getCoords()):
-                        j.setValue(i.getValue())
-                        j.setChecked(True)
-                for j in self.__wires:
-                    if isEqualPoints(i.getCoords(), j.getWireStartP()):
-                        for k in self.__checkers:
-                            if isEqualPoints(j.getWireEndP(), k.getCoords()):
-                                k.setValue(j.getValue())
-                                i.setChecked(True)                     
-        for i in self.__checkers:
-            ctrl = True
-            for j in self.__entries:
-                if isEqualPoints(i.getCoords(), j.getCoords()):
-                    ctrl = False
-                    break
-            for j in self.__wires:
-                if isEqualPoints(i.getCoords(), j.getWireEndP()):
-                    for k in self.__entries:
-                        if isEqualPoints(j.getWireStartP(), k.getCoords()):
-                            ctrl = False
-                            break
-                    if not ctrl:
-                        break
-            if ctrl:
-                i.setChecked(True)
-                i.setValue(None)
-        for i in self.__checkers:
-            while i.getChecked() is False:
-                a = i
-                while a.getChecked() is False:
-                    eq = True
-                    for j in self.__entries:
-                        if isEqualPoints(a.getCoords(), j.getCoords()):
-                            checkers = j.getGate().getChecks()
-                            for k in checkers:
-                                if k.getChecked() is False:
-                                    a = k
-                                    eq = False
-                                    break
-                            if eq:
-                                a.setValue(j.getGate().gateOut().getValue())
-                                a.setChecked(True)
-                            else:
-                                break
-                    for j in self.__wires:
-                        if isEqualPoints(a.getCoords(), j.getWireEndP()):
-                            for k in self.__entries:
-                                if isEqualPoints(j.getWireStartP(), k.getCoords()):
-                                    checkers = k.getGate().getChecks()
-                                    for p in checkers:
-                                        if p.getChecked() is False:
-                                            a = p
-                                            eq = False
-                                            break
-                                    if eq:
-                                        a.setValue(k.getGate().gateOut().getValue())
-                                        a.setChecked(True)
-                                    else:
-                                        break
-                            if eq is False:
-                                break
+        t = {}
+        thereUnchecked = True
+
+        while thereUnchecked:
+            thereUnchecked=False
+            for check in self.getCheckers():
+                thereUnchecked = True if (not check.getChecked()) else thereUnchecked
+                if not check.getChecked():
+                    isConnected = False
+                    for i in self.getEntries():
+                        if i.getTechCoords().equals(check.getTechCoords()):
+                            isConnected = True
+                            if(i.getGate()!= None):
+                                gate = i.getGate()
+                                checked = True
+                                for j in gate.getChecks():
+                                    checked = checked and j.getChecked()
+                                if checked:    # caso 3
+                                    check.setValue(gate.gateOut().getValue())
+                                    check.setChecked(True)
+                            else:   # casos 1 e 2
+                                check.setValue(i.getValue())
+                                check.setChecked(True)
+                    if not isConnected:
+                        check.setValue(None)
+                        check.setChecked(True)
+                                
+        # o caso 4 não consta no meio porque ele é resultado da combinação iterativa desses casos,
+        # observe que se uma porta é conectada a outra, mas o check que aponta para ela aparecer primeiro, 
+        # essa sequencia saltará a verificação dessa, devido a falta de informações, e percorrerá quantas vezes forem
+        # necessárias para completar a verificação
         return True
 
     def __prepareCheckers(self) -> None:
         for i in self.__checkers:
             i.setChecked(False)
+            i.setValue(None)
 
 
     def analyze(self) -> bool:
         if self.__validateLists() is False:
             return None
+        self.__netList()            
         self.__prepareCheckers()
         return self.__defineValues()
 
