@@ -176,7 +176,7 @@ class WireManager(Element):
 class MessageBox(Element):
     __center: Coords = None
     __message: str = ""
-    __visible: bool = True
+    __visible: bool = False
     def __init__(self, coords: Coords =(0,0)):
         super().__init__()
     
@@ -201,29 +201,35 @@ class MessageBox(Element):
 
     def draw(self):
         if self.__visible:
+            coordsX = (len(self.__message)*4)/2 
             Color(149/255, 196/255, 223/255).apply()
-            rect(Coords(-77+self.__center.getX(),-31+self.__center.getY()),
-            Coords(-77+self.__center.getX(),31+self.__center.getY()),
-            Coords(77+self.__center.getX(),31+self.__center.getY()),
-            Coords(77+self.__center.getX(),-31+self.__center.getY()))
-
+            glBegin(GL_QUADS)
+            Coords(-coordsX -3+ self.__center.getX(),-29-3+self.__center.getY()).apply()
+            Coords(-coordsX-3+self.__center.getX(),29+3+self.__center.getY()).apply()
+            Coords(coordsX+3+self.__center.getX(),29+3+self.__center.getY()).apply()
+            Coords(coordsX+3+self.__center.getX(),-29-3+self.__center.getY()).apply()
+            glEnd()
+            
             Color(216/255, 216/255, 216/255).apply()
-            rect(Coords(-75+self.__center.getX(),-29+self.__center.getY()),
-            Coords(-75+self.__center.getX(),29+self.__center.getY()),
-            Coords(75+self.__center.getX(),29+self.__center.getY()),
-            Coords(75+self.__center.getX(),-29+self.__center.getY()))
-
+            glBegin(GL_QUADS)
+            Coords(-coordsX + self.__center.getX(),-29+self.__center.getY()).apply()
+            Coords(-coordsX+self.__center.getX(),29+self.__center.getY()).apply()
+            Coords(coordsX+self.__center.getX(),29+self.__center.getY()).apply()
+            Coords(coordsX+self.__center.getX(),-29+self.__center.getY()).apply()
+            glEnd()
             Color(0.0,0.0,0.0).apply()
             glLineWidth(0.9)
             glBegin(GL_LINE_LOOP)
-            Coords(-75+self.__center.getX(),-29+self.__center.getY()).apply()
-            Coords(-75+self.__center.getX(),29+self.__center.getY()).apply()
-            Coords(75+self.__center.getX(),29+self.__center.getY()).apply()
-            Coords(75+self.__center.getX(),-29+self.__center.getY()).apply()
+           
+            Coords(-coordsX + self.__center.getX(),-29+self.__center.getY()).apply()
+            Coords(-coordsX+self.__center.getX(),29+self.__center.getY()).apply()
+            Coords(coordsX+self.__center.getX(),29+self.__center.getY()).apply()
+            Coords(coordsX+self.__center.getX(),-29+self.__center.getY()).apply()
             glEnd()
             glLineWidth(3)
                 
-            text("Error",Coords(-60+self.__center.getX(),-10+self.__center.getY()))
+            text(self.__message,Coords(-coordsX+20+self.__center.getX(),-10+self.__center.getY()))
+            text("Press ESC to close the Box Message.",Coords(-coordsX+20+self.__center.getX(),20+self.__center.getY()))
     def isInside(self):
         pass
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, window =None) -> bool:
@@ -364,6 +370,8 @@ class Window(Element):
                 self.__logicAnalyzer.analyze()
             except RuntimeError as re:
                 print(re)
+                self.getMessageBox().setMessage(str(re))
+                self.getMessageBox().setVisible(True)
                 self.deactivateSimulation()
          # self.logicAnalyzer.apply()
         #Draw the windows grid
@@ -377,14 +385,13 @@ class Window(Element):
                 Coords(i,j).apply()
         glEnd()        
          
-        self.__messageBox.draw()
         #self.center.draw(radius=1.0)
         #Draw the elements in window
        
         for i in self.elements:
             
             i.draw()
-       
+        self.__messageBox.draw()
         #return self
         #glPopMatrix()
     def adjustCenter(self):
@@ -744,8 +751,16 @@ class Panel(Element):
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         
+        if self.__window.getMessageBox().getVisible() ==True:
+            if event_type == EVENT_TYPE_KEY_ASCII and key == b'\x1b':    
+                self.__window.getMessageBox().setVisible(False)
+
+            return True
+
         if coords is not None:
             self.__coordMouse = Coords(self.validPoint(coords.getX()),self.validPoint(coords.getY()))
+            
+        
         if event_type == EVENT_TYPE_MOUSE:
             if button == GLUT_LEFT_BUTTON:
         
@@ -760,6 +775,8 @@ class Panel(Element):
 
         if event_type == EVENT_TYPE_KEY_ASCII:
             self.__wireManager.event(event_type, key, button, state, coords,self.__window)
+
+            
 
         self.__window.event( event_type, key=key, button=button, state=state, coords=coords)
         return None
