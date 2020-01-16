@@ -1,15 +1,18 @@
 from components import Element, Coords
 from components import Entry, Checker, Display, NotGate, AndGate, NandGate, OrGate, NorGate, XorGate, XnorGate, KeyBoard
+from logicanalyzer import*
 from util import *
 
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 
+
 componentClasses = [Entry, Checker, Display, NotGate, AndGate,
                     NandGate, OrGate, NorGate, XorGate, XnorGate, KeyBoard]
 
 EVENT_TYPE_MOUSE_WALKING_NOT_PRESS = 0
+EVENT_TYPE_KEY_ASCII = 1
 #Types of wires
 TYPE_WIRE_Z = 0
 TYPE_WIRE_Z_INVERT = 1 
@@ -21,7 +24,7 @@ class WireManager(Element):
     __endWire: Coords = None            #Wire end coordinate
     __drawWire: bool = False            #Determine if the user want draw a wire
     __typeWire: int = None              #Determine type wire
-    
+    __wireCanceled: bool = False
     def __init__(self):
         super().__init__()
         self.dotsWires = []
@@ -108,28 +111,42 @@ class WireManager(Element):
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, window =None) -> bool:
         
+     
         if window is not None and window.getDragComponent()== False:
             if event_type == EVENT_TYPE_MOUSE:
           
                 if button == GLUT_LEFT_BUTTON and state == GLUT_UP:
                     self.__drawWire = True
+                    self.__wireCanceled = False
                     self.setStartWire(coords)
 
                 if button == GLUT_RIGHT_BUTTON and state == GLUT_UP:
                     self.__drawWire = False
-                    self.addDotsToWire()
-     
+                    if self.__wireCanceled == False:
+                        self.addDotsToWire()
+
+            if event_type == EVENT_TYPE_KEY_ASCII and key ==  b'\x1b':
+                self.__drawWire = False
+                self.__wireCanceled = True
+               
+            
             if event_type == EVENT_TYPE_MOUSE_WALKING_NOT_PRESS:
-                    if self.__drawWire == True:
-                        self.setEndWire(coords)
+                
+                if self.__drawWire == True:
+                    self.setEndWire(coords)
+           
         
         return None
 
 #This class is responsible for draw the elements like gaters and entrys and grid 
 class Window(Element):
+
     factor: float = 0.1
     __dragComponent: bool = False
     __currentComponentDragged: int = 0 
+    __simulation: bool = False
+    __logicAnalyzer: LogicAnalyzer = None
+
     def __init__(self):
         super().__init__()
         self.center = Coords(0, 0)
@@ -137,10 +154,44 @@ class Window(Element):
         self.zoom = 1.0
         self.elements = []
         self.windowStartPosition = Coords(0,0)
-      
+        self.checks = []
+        self.keyboards = []
+        self.entrys = []
+        self.gates = []
+
+    def ativateSimulation(self):
+        
+        checks = []
+        entrys = []
+        wire = []
+
+        for i in self.gates():
+            checks.extend(i.getChecks())
+            entrys.append(i.gateOut())
+
+        for i in self.displays:
+            checks.extend(i.getCheks())
+
+        for i in self.keyboards:
+            entrys.extend(i.getEntries())
+
+        for i in self.wires:
+            wire.append(Wire(i))
+        
+        checks.extend(self.checks)
+        entrys.extend(self.entrys)
+        self.logicAnalyzer = LogicAnalyzer(entrys, wire, checks)
+
+    def deactivateSimulation(self):
+        self.logicAnalyzer = None
+
     
+    def isSimulation(self)->bool:
+        return self.logicAnalyzer == None
+
     def setDragComponent(self, drag):
         self.__dragComponent = drag
+
     def getDragComponent(self):
         return self.__dragComponent
     #Set the window position in the current coordinates plane
@@ -186,7 +237,8 @@ class Window(Element):
             return int(valor)
 
     def draw(self):
-        
+        #if self.logicAnalyzer is not None:
+         #   self.logicAnalyzer.apply()
         #Draw the windows grid
         Color(0.0,0.0,0.0).apply()
         glPointSize(1.0)
@@ -195,25 +247,6 @@ class Window(Element):
             for j in range(self.validPoint(self.windowStartPosition.getY()),self.validPoint(self.size.getY()), 5):
                 Coords(i,j).apply()
         glEnd()        
-        """
-        for i in range(20):
-            for j in range(20):
-                self.center.sum(Coords(i*POINT_SPACE, j*POINT_SPACE)
-                                ).draw(radius=0.5, color=Color(r=0.5, g=0.5, b=0.5))
-        for i in range(20):
-            for j in range(1, 20):
-                self.center.sum(Coords(i*POINT_SPACE, -j*POINT_SPACE)
-                                ).draw(radius=0.5, color=Color(r=0.5, g=0.5, b=0.5))
-        for i in range(1, 20):
-            for j in range(20):
-                self.center.sum(Coords(-i*POINT_SPACE, j*POINT_SPACE)
-                                ).draw(radius=0.5, color=Color(r=0.5, g=0.5, b=0.5))
-        for i in range(1, 20):
-            for j in range(1, 20):
-                self.center.sum(Coords(-i*POINT_SPACE, -j*POINT_SPACE)
-                                ).draw(radius=0.5, color=Color(r=0.5, g=0.5, b=0.5))
-        """
-       
         
        
         self.center.draw(radius=1.0)
@@ -263,6 +296,7 @@ class PainelComponents(Element):
     # coordinate of glut windows, value required to built the painelComponents.
     __coords: Coords = None
 
+    
     def __init__(self, coords):
         super().__init__()
         self.setCoords(coords)
@@ -464,9 +498,14 @@ class Panel(Element):
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         
-        if self.isInside(coords.getX(), coords.getY()) == True:
+        if event_type == EVENT_TYPE_MOUSE:
+            #Check if the click is on panel. Otherwise ignore
+            if self.isInside(coords.getX(), coords.getY()) == True:
+                self.__wireManager.event(event_type, key, button, state, coords,self.__window)
+
+        if event_type == EVENT_TYPE_KEY_ASCII:
             self.__wireManager.event(event_type, key, button, state, coords,self.__window)
-      
+
         self.__window.event( event_type, key, button, state, coords)
         return None
         

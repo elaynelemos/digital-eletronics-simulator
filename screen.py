@@ -6,7 +6,7 @@ from components import Entry, Checker, Display, NotGate, AndGate, NandGate, OrGa
 from elements import Window,WindowsBar, WindowGlobal, IconZoomMore, IconPrevious, IconStart, IconStop, IconZoomLess, IconNext, IconMoreAba,PainelComponents, WireManager,IconLineTypeInverterZ,IconLineTypeZ
 from util import Coords, alfa_num_around, EVENT_TYPE_MOUSE, EVENT_TYPE_KEY_ASCII
 EVENT_TYPE_MOUSE_WALKING_NOT_PRESS = 0
-
+EVENT_TYPE_KEY_ASCII = 1
 window: Window = Window()
 windowGlobal: WindowGlobal = WindowGlobal()
 screen = {}
@@ -85,10 +85,13 @@ def convert(x, y):
 
 
 def keyboard_ascii(key, x, y):
-    if key == b'\x1b':  # ESC
-        exit()
+    #if key == b'\x1b':  # ESC
+     #   exit()
     #if window.event(EVENT_TYPE_KEY_ASCII, coords=convert(x, y), key=key):
-        showScreen()
+        #showScreen()
+    print("ism")
+    windowGlobal.event(EVENT_TYPE_KEY_ASCII, key, None,None,None)
+    showScreen()    
     #windowGlobal.event(EVENT_TYPE_MOUSE, key, None,None,None)
     # Lista de caracteres
     # b'\x1b' : ESC
