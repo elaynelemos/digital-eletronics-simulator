@@ -54,8 +54,15 @@ class WireManager(Element):
 
     def validPoint(self,x: float)->int:
       
-        valor = (x -x%POINT_SPACE + POINT_SPACE) if x%POINT_SPACE>0 else (x - x%POINT_SPACE)
-        return int(valor)
+        #valor = (x -x%POINT_SPACE + POINT_SPACE) if x%POINT_SPACE>0 else (x - x%POINT_SPACE)
+        #return int(valor)
+        
+        if x>=0:
+            valor = (x -x%POINT_SPACE + POINT_SPACE) if x%POINT_SPACE>0 else (x - x%POINT_SPACE)
+            return int(valor)
+        else: 
+            valor = (x - x%POINT_SPACE) if x%POINT_SPACE>0 else (x -x%POINT_SPACE + POINT_SPACE) 
+            return int(valor)
     
     #Procedure needed for translate the coordinate wires
     def updateCoordDotsWires(self,translate: Coords):
@@ -172,6 +179,7 @@ class Window(Element):
     __simulation: bool = False
     __logicAnalyzer: LogicAnalyzer = None
 
+    __translate: Coords = Coords(0,0)
     def __init__(self):
         super().__init__()
         self.center = Coords(0, 0)
@@ -186,6 +194,12 @@ class Window(Element):
         self.displays = []
         self.wires = []
         self.logic = None
+
+    def setTranslate(self, translate:Coords):
+        self.__translate = Coords(self.__translate.getX()+translate.getX(), self.__translate.getY()+translate.getY())
+
+    def getTranslate(self):
+        return self.__tranlate
 
     def breakListElements(self):
         for i in self.elements:
@@ -295,10 +309,13 @@ class Window(Element):
        
         #self.center.draw(radius=1.0)
         #Draw the elements in window
+        #glMatrixMode(GL_PROJECTION)
+        #glPushMatrix()
+        #glTranslated(self.__translate.getX(),self.__translate.getY(), 0.0)
         for i in self.elements:
             i.draw()
-        return self
-       
+        #return self
+        #glPopMatrix()
     def adjustCenter(self):
         self.setCenter(Coords(self.validPoint((self.size.getX()/2)+self.windowStartPosition.getX()), self.validPoint((self.size.getY()/2)+self.windowStartPosition.getY())))
        
@@ -531,6 +548,7 @@ class Panel(Element):
     __activateMenu: bool = False
     __indexComponent: int = -1
     __coordsClick: Coords= None
+    __coordMouse: Coords =Coords(0,0)
     
 
     def __init__(self, coords):
@@ -574,6 +592,13 @@ class Panel(Element):
 
     def getWindow(self):
         return self.__window
+    def validPoint(self,x: float)->int:
+        if x>=0:
+            valor = (x -x%POINT_SPACE + POINT_SPACE) if x%POINT_SPACE>0 else (x - x%POINT_SPACE)
+            return int(valor)
+        else: 
+            valor = (x - x%POINT_SPACE) if x%POINT_SPACE>0 else (x -x%POINT_SPACE + POINT_SPACE) 
+            return int(valor)
 
     def draw(self):
 
@@ -603,7 +628,12 @@ class Panel(Element):
             self.__window.draw()
             self.__wireManager.draw()
 
-
+            Color(0.0,0.0,0.0).apply()
+            
+            glPointSize(5.0)
+            glBegin(GL_POINTS)
+            Coords(self.coordMouse.getX(),self.coordMouse.getY()).apply()
+            glEnd()
         
     def rotate(self, selection):
         if selection == 0:
@@ -638,6 +668,9 @@ class Panel(Element):
             return False
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
+        
+        if coords is not None:
+            self.coordMouse = Coords(self.validPoint(coords.getX()),self.validPoint(coords.getY()))
         if event_type == EVENT_TYPE_MOUSE:
             if button == GLUT_LEFT_BUTTON:
                 
@@ -1082,7 +1115,9 @@ class IconNext(Icon):
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, windowsBar = None)->bool:
         if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP: 
             if self.isInside(coords.getX(), coords.getY()) == True:
-                coordsWindow = windowsBar.getPanel().translate(Coords(POINT_SPACE,0))
+                #coordsWindow = windowsBar.getPanel().translate(Coords(POINT_SPACE,0))
+                windowsBar.getPanel().getWindow().setTranslate(Coords(POINT_SPACE,0))
+                print("Ta sim")
                 #windowsBar.getPanel().getWindow().setCenter(Coords(coordsWindow.getX()+5.0, coordsWindow.getY()))
 
 
