@@ -22,6 +22,8 @@ ORIENTATION_UD = 1
 ORIENTATION_RL = 2
 ORIENTATION_DU = 3
 
+MENU_NONE = 0
+
 
 class Color:
     __r: float = 0.0

@@ -146,28 +146,30 @@ class WireManager(Element):
         
         if window is not None and window.getDragComponent()== False:
             
-            if event_type == EVENT_TYPE_MOUSE:
-          
-                if button == GLUT_LEFT_BUTTON and state == GLUT_UP and m!=GLUT_ACTIVE_CTRL:
-                    self.__drawWire = True
-                    self.__wireCanceled = False
-                    self.setStartWire(coords)
+            if event_type == EVENT_TYPE_MOUSE and state == GLUT_UP:
+                # Starts and restart
+                if button == GLUT_LEFT_BUTTON:
+                    if m!=GLUT_ACTIVE_CTRL:
+                        self.__drawWire = True
+                        self.__wireCanceled = False
+                        self.setStartWire(coords)
 
                 #if button == GLUT_RIGHT_BUTTON and state == GLUT_UP:
-            if m == GLUT_ACTIVE_CTRL:
-                    self.__drawWire = False
-                    if self.__wireCanceled == False:
-                        self.addDotsToWire()    
+                    elif m == GLUT_ACTIVE_CTRL:
+                        self.__drawWire = False
+                        if self.__wireCanceled == False:
+                            self.addDotsToWire()
+                    return True
 
             if event_type == EVENT_TYPE_KEY_ASCII and key ==  b'\x1b':
                 self.__drawWire = False
                 self.__wireCanceled = True
-               
+                return True
             
             if event_type == EVENT_TYPE_MOUSE_WALKING_NOT_PRESS:
-                
                 if self.__drawWire == True:
                     self.setEndWire(coords)
+                    return True
         else:
             self.__drawWire = False   
         
@@ -233,7 +235,11 @@ class MessageBox(Element):
     def isInside(self):
         pass
     def event(self, event_type: int, key=None, button=None, state=None, coords=None, window =None) -> bool:
-        pass
+        if event_type == EVENT_TYPE_KEY_ASCII and key == b'\x1b':    
+            self.setVisible(False)
+            return True
+        return False
+        
 
 #This class is responsible for draw the elements like gaters and entrys and grid
 #  
@@ -303,12 +309,17 @@ class Window(Element):
 
         for i in self.keyboards:
             entrys.extend(i.getEntries())
-        
+        for i in self.entrys:
+            i.setValue(False)
         checks.extend(self.checks)
         entrys.extend(self.entrys)
         self.__logicAnalyzer = LogicAnalyzer(entrys, self.wires, checks)
 
     def deactivateSimulation(self):
+        for i in self.__logicAnalyzer.getEntries():
+            i.setValue(None)
+        for i in self.__logicAnalyzer.getCheckers():
+            i.setValue(None)
         self.__logicAnalyzer = None
         self.wires.clear()
         print("sim")
@@ -417,11 +428,7 @@ class Window(Element):
             self.wires.append(l)
 
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        print('Logic',self.__logicAnalyzer)
-        
-      
         if self.__logicAnalyzer is not None:
-            print("sim")
             for i in range(len(self.elements)):
                 if(self.elements[len(self.elements)-i-1].event(event_type, key=key, button=button, state=state, coords=coords)):
                     return True
@@ -439,7 +446,7 @@ class Window(Element):
                     else:
                         self.__dragComponent = False
                         return True
-            
+
             if event_type == EVENT_TYPE_MOUSE_WALKING_NOT_PRESS:
                 if self.__dragComponent == True:
                     self.elements[ self.__currentComponentDragged].setTranslation(Coords(self.validPoint(coords.getX()),self.validPoint(coords.getY())))
@@ -449,50 +456,6 @@ class Window(Element):
 
     def isInside(self, coords) -> bool:
         return False
-"""
-class Menu(Element):
-    __indexComponent: int = -1
-
-    def __init__(self, coords =Coords(0,0)):
-        self.super().__init__()
-
-    def menu(self, a):   
-        pass
-    def rotateElement(window: Window):
-        if window is not None:
-            index = window.getIndexComponentIsInside()
-            if index != -1:
-                self.__indexComponent = index
-
-    def rotate(self, selection):
-        if selection == 0:
-            pass
-        if selection == 1:
-            pass
-    def createMenu(self):
-
-        #submenu2 = glutCreateMenu(self.rotate)
-        #glutAddMenuEntry("90 degrees left",0)
-        #glutAddMenuEntry("90 degrees left",1)
-	    
-        menu =  glutCreateMenu(self.menu)
-        #glutAddSubMenu("Rotate", submenu2)
-        glutAddMenuEntry("Rotate", 0)
-        glutAddMenuEntry("Delete",1)
-        glutAddMenuEntry("Duplicate",2)
-     
-        glutAttachMenu(GLUT_RIGHT_BUTTON)
-
-    
-        
-    def isInside(self):
-        pass
-
-    def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
-        if event_type == EVENT_TYPE_MOUSE and state == GLUT_RIGHT_BUTTON:
-            self.createMenu()
-        return None
-"""
 
 # Painel contends the logics ports and others components like checker and entry 
 # for choose by user.
@@ -641,6 +604,9 @@ class Panel(Element):
         self.setWireManager(WireManager())
         self.translateWindows(Coords(0,0))
         self.__window.adjustCenter()
+        self.createMenu()
+        
+
     def getCoordMouse(self):
         return self.__coordMouse
     def translateWindows(self,coords: Coords):
@@ -717,7 +683,7 @@ class Panel(Element):
             glEnd()
     
 
-    def rotate(self, selection):
+    def callBackMenu(self, selection):
         if selection == 0:
             if self.__indexComponent == -1:
                 pass
@@ -737,7 +703,8 @@ class Panel(Element):
     def createMenu(self):
 
      
-        menu =  glutCreateMenu(self.rotate)
+        self.menu =  glutCreateMenu(self.callBackMenu)
+        glutSetMenu(MENU_NONE)
         glutAddMenuEntry("Rotate", 0)
         glutAddMenuEntry("Delete",1)
         glutAttachMenu(GLUT_RIGHT_BUTTON)
@@ -752,9 +719,7 @@ class Panel(Element):
     def event(self, event_type: int, key=None, button=None, state=None, coords=None) -> bool:
         
         if self.__window.getMessageBox().getVisible() ==True:
-            if event_type == EVENT_TYPE_KEY_ASCII and key == b'\x1b':    
-                self.__window.getMessageBox().setVisible(False)
-
+            self.__window.getMessageBox().event()
             return True
 
         if coords is not None:
@@ -765,9 +730,12 @@ class Panel(Element):
             if button == GLUT_LEFT_BUTTON:
         
                 self.__indexComponent = self.__window.getIndexComponentIsInside(coords)
-                print(self.__indexComponent)
+                
                 if self.__indexComponent!=-1:
-                    self.createMenu()
+                    glutSetMenu(self.menu)
+                else:
+                    glutSetMenu(MENU_NONE)
+                    
                  
                
             if self.isInside(coords.getX(), coords.getY()) == True and self.getWindow().isSimulation() :

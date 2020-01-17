@@ -114,9 +114,8 @@ def keyboard_ascii(key, x, y):
         showScreen()
 
     if key == b'G' or key == b'G':
-        print(window.logic)
-        if(window.logic is not None):
-            res
+        if(window.isSimulation()):
+            
     #windowGlobal.event(EVENT_TYPE_MOUSE, key, None,None,None)
     # Lista de caracteres
     # b'\x1b' : ESC
